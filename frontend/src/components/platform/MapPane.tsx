@@ -393,11 +393,11 @@ export default function MapPane() {
       // Guarantee ORCA's layers sit above the basemap. addLayer() appends, but
       // any re-add or style event can leave one underneath the raster, where a
       // 0.75-opacity tile over water hides it completely.
-      for (const id of allIds) {
-        if (map.getLayer(id)) {
-          try { map.moveLayer(id); } catch { /* already topmost */ }
-        }
-      }
+      // for (const id of allIds) {
+      //   if (map.getLayer(id)) {
+      //     try { map.moveLayer(id); } catch { /* already topmost */ }
+      //   }
+      // }
       map.triggerRepaint();
 
       setDrawn(allIds.filter((id) => !!map.getLayer(id)).length);
