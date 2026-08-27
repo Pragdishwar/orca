@@ -184,15 +184,15 @@ export default function ConversationPane() {
             <select
               aria-label="Persona"
               value={persona}
-            onChange={(e) => setPersona(e.target.value)}
-            className="rounded border border-slate-300 bg-white px-2 py-1 text-xs
-              text-slate-700 outline-none focus:ring-2 focus:ring-sky-500"
-          >
-            {personas.length === 0 && <option value="fisherman">Fisherman</option>}
-            {personas.map((p) => (
-              <option key={p.persona_id} value={p.persona_id}>{p.label}</option>
-            ))}
-          </select>
+              onChange={(e) => setPersona(e.target.value)}
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-sky-500"
+            >
+              {personas.length === 0 && <option value="fisherman">Fisherman</option>}
+              {personas.map((p) => (
+                <option key={p.persona_id} value={p.persona_id}>{p.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <ContextChips />
         {activePersona && (

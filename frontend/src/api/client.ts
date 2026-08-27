@@ -255,7 +255,7 @@ export const api = {
     session_id: string; query_text: string; persona?: string; force_failure?: boolean; stream?: boolean;
   }) {
     body.stream = true;
-    const res = await fetch(API_BASE + '/api/query', {
+    const res = await fetch(API_URL + '/api/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)

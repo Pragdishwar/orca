@@ -50,7 +50,7 @@ interface OrcaState {
   setActiveTab: (t: TabId) => void;
   setPersona: (p: string) => void;
   setLanguage: (l: string) => void;
-  setIsBoatModalOpen: (o: boolean) => void;
+  setBoatModalOpen: (o: boolean) => void;
   setActiveBoat: (b: Boat | null) => void;
   setUseMockChat: (m: boolean) => void;
 
@@ -99,7 +99,7 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
   setPersona: (persona) => set({ persona }),
   setLanguage: (language) => set({ language }),
-  setIsBoatModalOpen: (isBoatModalOpen) => set({ isBoatModalOpen }),
+  setBoatModalOpen: (isBoatModalOpen) => set({ isBoatModalOpen }),
   setActiveBoat: (activeBoat) => set({ activeBoat }),
   setUseMockChat: (useMockChat) => set({ useMockChat }),
 
