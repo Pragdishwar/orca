@@ -7,7 +7,7 @@ import csv
 import json
 import logging
 from sqlalchemy import select, text
-from backend.app.db.session import async_session, engine
+from backend.app.db.session import async_session, engine, Base
 from backend.app.models.boat import Boat
 from backend.app.models.hull_threshold import HullThreshold
 from backend.app.models.source_registry import SourceRegistry
@@ -17,6 +17,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def seed_data():
+    # Ensure PostGIS extension exists and create tables
+    async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+        
     async with async_session() as session:
         # Seed Source Registry (D-14)
         sources = [

@@ -19,3 +19,8 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY backend ./backend
 
 ENV PYTHONPATH=/app
+
+COPY backend/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
