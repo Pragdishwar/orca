@@ -9,6 +9,7 @@ class QueryRequest(BaseModel):
     query_text: str
     persona: Optional[str] = "fisherman"
     force_failure: bool = False
+    stream: bool = False
 
 
 class QueryResponse(BaseModel):

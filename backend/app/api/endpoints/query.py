@@ -27,7 +27,7 @@ router = APIRouter()
 CROSSING_VARIABLES = ["hs", "tp", "dir", "swell_hs"]
 
 
-@router.post("", response_model=QueryResponse)
+@router.post("")
 async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db)):
     """Runs the agent graph and persists the query, trace and advisory."""
     session = await _load_or_create_session(db, request)
@@ -121,7 +121,11 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
     if intent_result and state.get("guard_result") != "REJECT":
         answer_text = intent_result["answer"]
 
-    return QueryResponse(
+    from fastapi.responses import StreamingResponse
+    import json
+    import asyncio
+
+    response_obj = QueryResponse(
         answer=answer_text,
         verdict=computed["verdict"],
         index_value=computed["index_value"],
@@ -150,6 +154,22 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
         broadcast=render_all(computed, state.get("hull_comparison", [])),
         intent_result=intent_result,
     )
+
+    async def stream_generator():
+        # Stream the text chunk by chunk to simulate real-time typing
+        words = answer_text.split(" ")
+        for i, word in enumerate(words):
+            chunk = word + (" " if i < len(words) - 1 else "")
+            yield f"data: {json.dumps({'type': 'chunk', 'text': chunk})}\n\n"
+            await asyncio.sleep(0.03)
+        
+        # Yield the final structured data payload
+        payload = response_obj.model_dump(mode="json")
+        yield f"data: {json.dumps({'type': 'done', 'payload': payload})}\n\n"
+
+    if request.stream:
+        return StreamingResponse(stream_generator(), media_type="text/event-stream")
+    return response_obj
 
 
 def _persistable(computed: Dict[str, Any]) -> Dict[str, Any]:

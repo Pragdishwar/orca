@@ -31,6 +31,7 @@ interface OrcaState {
 
   chatHistory: ChatMessage[];
   isQuerying: boolean;
+  useMockChat: boolean;
   /** The most recent successful answer. Drives map, evidence and compile tabs. */
   active: QueryResponse | null;
   context: Record<string, any>;
@@ -49,8 +50,9 @@ interface OrcaState {
   setActiveTab: (t: TabId) => void;
   setPersona: (p: string) => void;
   setLanguage: (l: string) => void;
-  setBoatModalOpen: (o: boolean) => void;
+  setIsBoatModalOpen: (o: boolean) => void;
   setActiveBoat: (b: Boat | null) => void;
+  setUseMockChat: (m: boolean) => void;
 
   boot: () => Promise<void>;
   refreshHealth: () => Promise<void>;
@@ -79,6 +81,7 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
 
   chatHistory: [],
   isQuerying: false,
+  useMockChat: false,
   active: null,
   context: {},
   updatedFields: [],
@@ -96,8 +99,9 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
   setPersona: (persona) => set({ persona }),
   setLanguage: (language) => set({ language }),
-  setBoatModalOpen: (isBoatModalOpen) => set({ isBoatModalOpen }),
+  setIsBoatModalOpen: (isBoatModalOpen) => set({ isBoatModalOpen }),
   setActiveBoat: (activeBoat) => set({ activeBoat }),
+  setUseMockChat: (useMockChat) => set({ useMockChat }),
 
   boot: async () => {
     try {
@@ -171,31 +175,78 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
     });
 
     try {
-      const res = await api.query({
-        session_id: sessionId,
-        query_text: withBoat,
-        persona,
-        force_failure: opts?.forceFailure ?? false,
-      });
+      const messageId = crypto.randomUUID();
+      if (!get().useMockChat) {
+        const stream = api.queryStream({
+          session_id: sessionId,
+          query_text: withBoat,
+          persona,
+          force_failure: opts?.forceFailure ?? false,
+        });
 
-      let trace: TraceStep[] = [];
-      try {
-        trace = (await api.trace(res.trace_id)).nodes.steps;
-      } catch { trace = []; }
+        set((s) => ({
+          chatHistory: [...s.chatHistory, { id: messageId, role: 'agent', text: '' }]
+        }));
 
-      set((s) => ({
-        chatHistory: [...s.chatHistory,
-          { id: crypto.randomUUID(), role: 'agent', text: res.answer, response: res }],
-        isQuerying: false,
-        active: res,
-        context: res.context,
-        updatedFields: res.updated_fields,
-        language: res.language,
-        trace,
-        hinges: res.hinge_events,
-        sources: res.sources.length ? res.sources : s.sources,
-      }));
-      get().refreshHealth();
+        let payload: QueryResponse | null = null;
+        for await (const chunk of stream) {
+          if (chunk.type === 'chunk') {
+            set((s) => ({
+              chatHistory: s.chatHistory.map((m) =>
+                m.id === messageId ? { ...m, text: m.text + chunk.text } : m)
+            }));
+          } else if (chunk.type === 'done') {
+            payload = chunk.payload;
+          }
+        }
+
+        if (payload) {
+          let trace: TraceStep[] = [];
+          try {
+            trace = (await api.trace(payload.trace_id)).nodes.steps;
+          } catch { trace = []; }
+
+          set((s) => ({
+            chatHistory: s.chatHistory.map((m) =>
+              m.id === messageId ? { ...m, response: payload } : m),
+            isQuerying: false,
+            active: payload,
+            context: payload!.context,
+            updatedFields: payload!.updated_fields,
+            language: payload!.language,
+            trace,
+            hinges: payload!.hinge_events,
+            sources: payload!.sources.length ? payload!.sources : s.sources,
+          }));
+          get().refreshHealth();
+        }
+      } else {
+        const res = await api.query({
+          session_id: sessionId,
+          query_text: withBoat,
+          persona,
+          force_failure: opts?.forceFailure ?? false,
+        });
+
+        let trace: TraceStep[] = [];
+        try {
+          trace = (await api.trace(res.trace_id)).nodes.steps;
+        } catch { trace = []; }
+
+        set((s) => ({
+          chatHistory: [...s.chatHistory,
+            { id: messageId, role: 'agent', text: res.answer, response: res }],
+          isQuerying: false,
+          active: res,
+          context: res.context,
+          updatedFields: res.updated_fields,
+          language: res.language,
+          trace,
+          hinges: res.hinge_events,
+          sources: res.sources.length ? res.sources : s.sources,
+        }));
+        get().refreshHealth();
+      }
     } catch (e) {
       set((s) => ({
         chatHistory: [...s.chatHistory, {

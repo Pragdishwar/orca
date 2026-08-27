@@ -147,6 +147,7 @@ function Cell({ label, value }: { label: string; value: string }) {
 export default function ConversationPane() {
   const {
     chatHistory, isQuerying, submitQuery, personas, persona, setPersona,
+    useMockChat, setUseMockChat
   } = useOrcaStore();
   const [text, setText] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
@@ -172,9 +173,17 @@ export default function ConversationPane() {
           <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
             Retained context
           </h3>
-          <select
-            aria-label="Persona"
-            value={persona}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setUseMockChat(!useMockChat)}
+              className={`text-xs px-2 py-1 rounded border ${useMockChat ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-slate-200 border-slate-300 text-slate-700'}`}
+              title="Toggle Legacy Mode (disables real-time streaming)"
+            >
+              Mock Chat {useMockChat ? 'ON' : 'OFF'}
+            </button>
+            <select
+              aria-label="Persona"
+              value={persona}
             onChange={(e) => setPersona(e.target.value)}
             className="rounded border border-slate-300 bg-white px-2 py-1 text-xs
               text-slate-700 outline-none focus:ring-2 focus:ring-sky-500"

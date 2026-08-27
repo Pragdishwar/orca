@@ -248,8 +248,35 @@ export const api = {
   health: () => get<Health>('/api/health'),
 
   query: (body: {
-    session_id: string; query_text: string; persona?: string; force_failure?: boolean;
+    session_id: string; query_text: string; persona?: string; force_failure?: boolean; stream?: boolean;
   }) => post<QueryResponse>('/api/query', body),
+
+  queryStream: async function* (body: {
+    session_id: string; query_text: string; persona?: string; force_failure?: boolean; stream?: boolean;
+  }) {
+    body.stream = true;
+    const res = await fetch(API_BASE + '/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('API Error');
+    const reader = res.body?.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          yield JSON.parse(line.slice(6));
+        }
+      }
+    }
+  },
 
   trace: (traceId: string) =>
     get<{ trace_id: string; nodes: { steps: TraceStep[] }; hinge_events: { events: HingeEvent[] } }>(
