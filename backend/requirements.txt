@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+geoalchemy2
+pydantic
+apscheduler
+langgraph
+langchain_core
+pandas
+pyarrow
+pytest
+pytest-asyncio
