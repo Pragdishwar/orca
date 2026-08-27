@@ -22,6 +22,10 @@ DEFAULT_SQLITE_PATH = os.path.join(
 )
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DEFAULT_SQLITE_PATH}")
 
+# Supabase often adds ?pgbouncer=true, which asyncpg does not support as a kwarg
+if "pgbouncer=true" in DATABASE_URL.lower():
+    DATABASE_URL = DATABASE_URL.replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
+
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
 engine = create_async_engine(DATABASE_URL, echo=False, future=True)
