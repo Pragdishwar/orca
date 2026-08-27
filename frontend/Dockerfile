@@ -1,29 +1,20 @@
-# Build Stage
-FROM node:18-alpine AS build
-
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copy package configurations
-COPY package.json package-lock.json ./
+# The API base URL is baked in at build time by Vite.
+ARG VITE_API_URL=http://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
 
-# Install dependencies cleanly
+COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy the rest of the frontend application
 COPY . .
-
-# Build the Vite SPA
 RUN npm run build
 
-# Production Stage (Nginx)
 FROM nginx:alpine
-
-# Copy built assets to Nginx
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# Optional: Add custom nginx configuration for SPA routing
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-
+# SPA routing: unknown paths fall back to index.html.
+RUN printf 'server {\n  listen 80;\n  root /usr/share/nginx/html;\n  location / {\n    try_files $uri $uri/ /index.html;\n  }\n}\n' \
+    > /etc/nginx/conf.d/default.conf
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

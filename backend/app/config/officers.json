@@ -1,0 +1,9 @@
+{
+  "_comment": "Roster of people permitted to release an advisory or alert. SRS 7.4 specifies a single-role prototype with no user accounts, so this is an authorisation roster, not an authentication system: it establishes WHO may be recorded as accountable, but it does not prove the person at the keyboard is that officer. Real deployment needs an identity provider - see README 'Known gaps'.",
+  "officers": [
+    {"officer_id": "KL-HM-01", "name": "Harbour Master, Muthalapozhi", "role": "harbour_master"},
+    {"officer_id": "KL-FD-07", "name": "District Fisheries Officer, Thiruvananthapuram", "role": "fisheries_officer"},
+    {"officer_id": "ICG-VZM-03", "name": "Duty Officer, Coast Guard Vizhinjam", "role": "coast_guard"},
+    {"officer_id": "KL-DM-02", "name": "District Disaster Management Cell", "role": "disaster_mgmt"}
+  ]
+}

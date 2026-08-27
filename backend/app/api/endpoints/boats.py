@@ -3,12 +3,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from backend.app.schemas.boat import BoatCreate, BoatResponse, BoatUpdate
+from backend.app.core.auth import require_token
 from backend.app.db.session import get_db
 from backend.app.models.boat import Boat
 
 router = APIRouter()
 
-@router.post("", response_model=BoatResponse)
+@router.post("", response_model=BoatResponse, dependencies=[Depends(require_token)])
 async def create_boat(boat: BoatCreate, db: AsyncSession = Depends(get_db)):
     db_boat = Boat(**boat.model_dump())
     db.add(db_boat)
@@ -29,7 +30,7 @@ async def get_boat(boat_id: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Boat not found")
     return boat
 
-@router.put("/{boat_id}", response_model=BoatResponse)
+@router.put("/{boat_id}", response_model=BoatResponse, dependencies=[Depends(require_token)])
 async def update_boat(boat_id: str, boat_update: BoatUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Boat).filter(Boat.boat_id == boat_id))
     boat = result.scalars().first()
@@ -44,7 +45,7 @@ async def update_boat(boat_id: str, boat_update: BoatUpdate, db: AsyncSession = 
     await db.refresh(boat)
     return boat
 
-@router.delete("/{boat_id}")
+@router.delete("/{boat_id}", dependencies=[Depends(require_token)])
 async def delete_boat(boat_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Boat).filter(Boat.boat_id == boat_id))
     boat = result.scalars().first()

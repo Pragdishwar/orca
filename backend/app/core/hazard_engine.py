@@ -19,8 +19,11 @@ def calculate_hazard_index(
     weights: Optional[Dict[str, float]] = None
 ) -> float:
     """
-    Computes a deterministic hazard index based on wave, tide, and geometry data.
-    Overrides the index to a critically high value if lightning or cyclone flags are active.
+    Computes a deterministic hazard index (SRS 5.3) in [0, 1].
+
+    Lightning and cyclone are treated as override-strength signals rather than
+    weighted contributions: either one is disqualifying on its own regardless
+    of wave state, so it saturates the index at 1.0.
     """
     if weights is None:
         weights = {
@@ -28,9 +31,9 @@ def calculate_hazard_index(
             'w4': 0.1, 'w5': 0.1, 'w6': 0.1, 'w7': 0.1
         }
     
-    # Overrides: if lightning or cyclone is present, index is forced above unsafe
+    # Overrides: either flag saturates the index, keeping the [0, 1] contract.
     if lightning_flag == 1 or cyclone_flag == 1:
-        return 99.9
+        return 1.0
 
     hs = wave_data.get('hs', 0.0)
     tp = wave_data.get('tp', 0.0)
@@ -50,12 +53,12 @@ def calculate_hazard_index(
     diff_rad = math.radians(wave_dir - channel_bearing)
     align_val = max(0.0, math.cos(diff_rad))
     
-    # Ebb penalty
+    # Ebb penalty: an outgoing tide against incoming swell steepens the bar.
     k = 0.3
-    ebb_penalty = k * abs(rate) if stage == 'ebb' else 0.0
+    ebb_penalty = min(1.0, k * abs(rate)) if stage == 'ebb' else 0.0
     
-    # Swell ratio
-    swell_ratio = swell_hs / max(hs, 0.01)
+    # Swell ratio: long-period swell dominating wind sea is the dangerous case.
+    swell_ratio = min(1.0, swell_hs / max(hs, 0.01))
     
     index = (
         weights.get('w1', 0.3) * n_hs +
@@ -67,7 +70,8 @@ def calculate_hazard_index(
         weights.get('w7', 0.1) * float(cyclone_flag)
     )
     
-    return float(index)
+    # Weights sum to 1 and every term is bounded to [0, 1], so the index is too.
+    return float(min(1.0, max(0.0, index)))
 
 
 def evaluate_verdict(index: float, hull_threshold: Any) -> str:

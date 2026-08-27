@@ -1,27 +1,36 @@
-from fastapi import APIRouter, BackgroundTasks
-from typing import Dict, Any
-from backend.app.tasks.sentinel import sentinel_hazard_poll, scheduler, last_run_time
+from typing import Any, Dict
 
-router = APIRouter(prefix="/sentinel", tags=["Sentinel"])
+from fastapi import APIRouter
+
+from backend.app.tasks.sentinel import (
+    POLL_INTERVAL_MINUTES,
+    last_run_summary,
+    last_run_time,
+    scheduler,
+    sentinel_hazard_poll,
+)
+
+router = APIRouter()
+
 
 @router.post("/trigger")
-async def manual_trigger(background_tasks: BackgroundTasks):
+async def manual_trigger() -> Dict[str, Any]:
+    """Fire a poll immediately instead of waiting for the interval.
+
+    Runs inline rather than in the background so the caller gets the cycle's
+    result and the Alerts tab can be refreshed straight away.
     """
-    Manually overrides the APScheduler interval and fires a Sentinel poll immediately.
-    """
-    background_tasks.add_task(sentinel_hazard_poll)
-    return {"status": "success", "message": "Sentinel manual hazard poll triggered in background."}
+    summary = await sentinel_hazard_poll()
+    return {"status": "success", **summary}
+
 
 @router.get("/status")
 async def get_status() -> Dict[str, Any]:
-    """
-    Returns the operational status of the APScheduler and the latest poll execution.
-    """
-    is_running = scheduler.running
-    jobs = scheduler.get_jobs()
-    
+    import backend.app.tasks.sentinel as s
     return {
-        "running": is_running,
-        "active_jobs": len(jobs),
-        "last_run": last_run_time.isoformat() if last_run_time else None
+        "running": scheduler.running,
+        "active_jobs": len(scheduler.get_jobs()),
+        "interval_minutes": POLL_INTERVAL_MINUTES,
+        "last_run": s.last_run_time.isoformat() if s.last_run_time else None,
+        "last_run_summary": s.last_run_summary,
     }

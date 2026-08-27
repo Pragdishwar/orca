@@ -1,15 +1,22 @@
-import uuid
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import String, Float
-from geoalchemy2 import Geometry
+from backend.app.db.types import JSONColumn
 from backend.app.db.session import Base
 
+
 class Zone(Base):
+    """Geofence polygon (IMBL / MPA / SENSITIVE / RESTRICTED).
+
+    The ring is stored as GeoJSON rather than a PostGIS geometry so the
+    prototype runs without a spatial database; point-in-polygon is evaluated
+    in `backend.app.core.geo`.
+    """
+
     __tablename__ = "zones"
-    
-    zone_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    zone_id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String)
     type: Mapped[str] = mapped_column(String)
-    geom = mapped_column(Geometry('POLYGON', srid=4326, spatial_index=True))
+    geojson: Mapped[dict] = mapped_column(JSONColumn)
     buffer_km: Mapped[float] = mapped_column(Float)
+    provenance: Mapped[str] = mapped_column(String, default="SYNTHETIC")

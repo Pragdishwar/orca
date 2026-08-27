@@ -1,0 +1,10 @@
+{
+  "_comment": "D-13. No SMS gateway, IVR or VHF transmitter is integrated. These outputs are rendered artefacts; this table documents who would own each channel and what it would cost.",
+  "rows": [
+    {"channel": "SMS", "owner": "State Fisheries Dept via bulk SMS aggregator", "licence_required": "DLT sender-ID registration", "unit_cost_inr": 0.15, "tier": 1},
+    {"channel": "VHF", "owner": "Coastal Police / harbour VHF watch", "licence_required": "WPC station licence, Ch 16 discipline", "unit_cost_inr": 0.0, "tier": 2},
+    {"channel": "Printed slip", "owner": "Landing-centre office", "licence_required": "None", "unit_cost_inr": 1.2, "tier": 3},
+    {"channel": "Landing-centre board", "owner": "Harbour Management Society", "licence_required": "None", "unit_cost_inr": 0.0, "tier": 0}
+  ],
+  "monthly_infra_inr_10_centres": 4200
+}

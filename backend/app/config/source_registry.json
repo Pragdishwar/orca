@@ -1,0 +1,109 @@
+{
+  "_comment": "D-14. FR-08: adding a source here (or via POST /api/registry) changes what the discovery agent selects, with no agent code change. access_status records what actually happened when the ETL tried the source - CONNECTED, ATTEMPTED or SUBSTITUTED. Do not mark a source CONNECTED unless it really is.",
+  "rows": [
+    {
+      "source_id": "mosdac_insat3d_lightning",
+      "provider": "ISRO (MOSDAC) INSAT-3D",
+      "country": "IN",
+      "variables": ["lightning_strike_density", "cyclone_warning"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 4.0,
+      "access_method": "mosdac_api",
+      "access_status": "SUBSTITUTED",
+      "priority_tier": 1,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Tier-1 and attempted first for every variable it covers. MOSDAC requires an authenticated account that this build does not hold, so the served values are schema-matched synthetic. Shown as substituted, never silently swapped."
+    },
+    {
+      "source_id": "incois_advisory",
+      "provider": "INCOIS",
+      "country": "IN",
+      "variables": ["official_advisory", "hs", "swell_hs"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 25.0,
+      "access_method": "incois_bulletin",
+      "access_status": "SUBSTITUTED",
+      "priority_tier": 1,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Official advisory text is generated in the published bulletin format. Real captured bulletins should replace this before any field use."
+    },
+    {
+      "source_id": "bhuvan_oceansat3_ocm",
+      "provider": "ISRO (Bhuvan) Oceansat-3 OCM",
+      "country": "IN",
+      "variables": ["chl_mg_m3", "coastal_boundary"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 1.0,
+      "access_method": "bhuvan_wms",
+      "access_status": "ATTEMPTED",
+      "priority_tier": 1,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Tier-1 for chlorophyll. Attempted ahead of NASA OceanColor per R-8."
+    },
+    {
+      "source_id": "imd_harbour_warning",
+      "provider": "IMD",
+      "country": "IN",
+      "variables": ["wind_ms", "cyclone_warning", "official_advisory"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 12.0,
+      "access_method": "imd_bulletin",
+      "access_status": "ATTEMPTED",
+      "priority_tier": 1,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Sits below INCOIS in the R-3 arbitration precedence order."
+    },
+    {
+      "source_id": "tide_harmonic_muthalapozhi",
+      "provider": "Harmonic tide prediction",
+      "country": "IN",
+      "variables": ["tide_height_m", "tide_stage", "tide_rate"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 0.5,
+      "access_method": "local_harmonic",
+      "access_status": "CONNECTED",
+      "priority_tier": 1,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Computed locally from M2 + S2 constituents. No network dependency."
+    },
+    {
+      "source_id": "copernicus_marine_wave",
+      "provider": "Copernicus Marine",
+      "country": "EU",
+      "variables": ["hs", "tp", "dir", "swell_hs", "windsea_hs", "wind_ms"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 8.0,
+      "access_method": "copernicus_subset",
+      "access_status": "CONNECTED",
+      "priority_tier": 2,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Documented tier-2 fallback for wave variables. Selected only after the tier-1 Indian sources for those variables fail to connect."
+    },
+    {
+      "source_id": "nasa_oceancolor",
+      "provider": "NASA OceanColor",
+      "country": "US",
+      "variables": ["chl_mg_m3", "sst_c"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 4.0,
+      "access_method": "oceancolor_subset",
+      "access_status": "CONNECTED",
+      "priority_tier": 2,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Tier-2 fallback for chlorophyll and SST, used when Bhuvan is unavailable."
+    },
+    {
+      "source_id": "noaa_gfs_wind",
+      "provider": "NOAA GFS",
+      "country": "US",
+      "variables": ["wind_ms", "wind_dir_deg"],
+      "spatial_coverage": "kerala",
+      "resolution_km": 25.0,
+      "access_method": "gfs_grib",
+      "access_status": "CONNECTED",
+      "priority_tier": 3,
+      "provenance": "SYNTHETIC_STRUCTURED",
+      "note": "Last-resort wind source."
+    }
+  ]
+}

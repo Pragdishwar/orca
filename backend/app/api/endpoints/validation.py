@@ -1,20 +1,21 @@
-from fastapi import APIRouter
-from backend.app.schemas.validation import ValidationResponse
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, Query
+
+from backend.app.core import validation as validation_core
 
 router = APIRouter()
 
-@router.get("", response_model=ValidationResponse)
-async def get_validation(threshold: float = 2.0):
-    """Computes hits, misses, false alarms, POD, FAR, skill score vs Hs > threshold baseline."""
-    # Mock data for validation response
-    return ValidationResponse(
-        hits=120,
-        misses=5,
-        false_alarms=15,
-        pod=0.96,
-        far=0.11,
-        skill_score=0.85,
-        failure_cases=[
-            {"query_id": "test-1", "reason": "Edge case missed by guard"}
-        ]
-    )
+
+@router.get("")
+async def get_validation(
+    threshold: Optional[float] = Query(
+        None, ge=0.0, le=1.0,
+        description="Index operating point. Defaults to the reference hull's unsafe band."),
+) -> Dict[str, Any]:
+    """Contingency table, POD, FAR, days-per-year and baseline skill.
+
+    Recomputed from the analysis record on every call, so moving the threshold
+    moves the numbers (FR-37). Nothing here is a stored constant.
+    """
+    return validation_core.compute(threshold)

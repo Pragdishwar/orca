@@ -55,7 +55,8 @@ def test_calculate_hazard_index_override():
         {'channel_bearing': 90},
         lightning_flag=1, cyclone_flag=0
     )
-    assert index == 99.9
+    # Disqualifying signal saturates the index rather than escaping [0, 1].
+    assert index == 1.0
 
 def test_evaluate_verdict_boundaries():
     threshold = MockHullThreshold(0.4, 0.7)
@@ -64,8 +65,7 @@ def test_evaluate_verdict_boundaries():
     assert evaluate_verdict(0.4, threshold) == 'MARGINAL'
     assert evaluate_verdict(0.65, threshold) == 'MARGINAL'
     assert evaluate_verdict(0.7, threshold) == 'DO_NOT_CROSS'
-    assert evaluate_verdict(1.5, threshold) == 'DO_NOT_CROSS'
-    assert evaluate_verdict(99.9, threshold) == 'DO_NOT_CROSS'
+    assert evaluate_verdict(1.0, threshold) == 'DO_NOT_CROSS'
 
 def test_compute_return_window_and_turnback():
     threshold = MockHullThreshold(0.4, 0.7)

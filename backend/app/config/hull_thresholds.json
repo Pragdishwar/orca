@@ -1,0 +1,13 @@
+{
+  "_comment": "D-10. source=elicited: these are judgement calls from hull vulnerability, NOT fitted to the incident record. Calibrated to the operating range of the SRS 5.3 index.",
+  "rows": [
+    {"hull_class": "PLYWOOD_CANOE", "label": "Plywood Canoe", "hs_marginal_m": 1.1, "hs_unsafe_m": 1.6,
+     "index_marginal": 0.32, "index_unsafe": 0.40, "cruise_knots": 5.0, "source": "elicited"},
+    {"hull_class": "FRP_SMALL", "label": "Small FRP", "hs_marginal_m": 1.6, "hs_unsafe_m": 2.2,
+     "index_marginal": 0.36, "index_unsafe": 0.44, "cruise_knots": 7.0, "source": "elicited"},
+    {"hull_class": "TRAWLER_MED", "label": "Mechanised Trawler", "hs_marginal_m": 2.2, "hs_unsafe_m": 3.0,
+     "index_marginal": 0.46, "index_unsafe": 0.56, "cruise_knots": 9.0, "source": "elicited"},
+    {"hull_class": "TRAWLER_DEEP", "label": "Deep-Sea Trawler", "hs_marginal_m": 3.0, "hs_unsafe_m": 4.2,
+     "index_marginal": 0.52, "index_unsafe": 0.64, "cruise_knots": 11.0, "source": "elicited"}
+  ]
+}

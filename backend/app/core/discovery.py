@@ -1,12 +1,22 @@
+"""Dataset discovery: choose a source per variable from the registry (SRS 5.2).
+
+FR-06 requires selection to happen at query time by ranking registry
+candidates, not by mapping a query type to a fixed source, and FR-09 requires
+an Indian/ISRO source to be attempted before any non-Indian substitute for
+every variable one covers. Both fall out of resolving each variable
+independently in tier order.
+"""
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.models.source_registry import SourceRegistry
 
 logger = logging.getLogger(__name__)
+
 
 class DiscoveryDecisionLog(BaseModel):
     candidates_considered: List[str]
@@ -14,77 +24,135 @@ class DiscoveryDecisionLog(BaseModel):
     priority_tier: Optional[int]
     reason: str
     fallback_occurred: bool
+    failed: List[str] = []
+    per_variable: List[Dict[str, Any]] = []
+
 
 class DiscoveryResult(BaseModel):
     selected_sources: List[SourceRegistry]
     log: DiscoveryDecisionLog
-    
+
     model_config = {"arbitrary_types_allowed": True}
+
+
+def _variables_of(src: SourceRegistry) -> List[str]:
+    v = src.variables
+    if isinstance(v, list):
+        return v
+    if isinstance(v, dict):
+        return v.get("available", list(v.keys()))
+    return []
+
 
 class DatasetDiscoveryAgent:
     def __init__(self, session: AsyncSession):
         self.session = session
-        
-    async def _attempt_connection(self, source: SourceRegistry) -> bool:
-        """
-        Simulates an actual connection check. 
-        In production, this attempts HTTP/FTP endpoints for health status.
-        """
-        return source.access_status != "OFFLINE"
 
-    async def discover_sources(self, required_variables: List[str], region: str) -> DiscoveryResult:
-        # Step 1: Query SourceRegistry for region match
+    async def _attempt_connection(self, source: SourceRegistry) -> bool:
+        """Whether this source can actually serve data right now.
+
+        The registry records the outcome of the real access attempt made during
+        ETL (SRS 9.1 step 2). A source recorded as ATTEMPTED or SUBSTITUTED did
+        not yield data - typically because it needs credentials this build does
+        not hold - so it is not selectable, and the fall-through is logged
+        rather than hidden. In production this becomes a live health probe.
+        """
+        return source.access_status == "CONNECTED"
+
+    async def discover_sources(self, required_variables: List[str],
+                               region: str) -> DiscoveryResult:
         stmt = select(SourceRegistry).where(SourceRegistry.spatial_coverage == region)
-        result = await self.session.execute(stmt)
-        sources = result.scalars().all()
-        
-        valid_candidates = []
-        for src in sources:
-            src_vars = []
-            if isinstance(src.variables, list):
-                src_vars = src.variables
-            elif isinstance(src.variables, dict):
-                src_vars = src.variables.get('available', list(src.variables.keys()))
-                
-            # Must support all required variables
-            if all(var in src_vars for var in required_variables):
-                valid_candidates.append(src)
-                
-        # Step 2: Sort candidates strictly by priority_tier ASC (Tier 1 ISRO/Indian -> Tier 2 Foreign)
-        valid_candidates.sort(key=lambda s: s.priority_tier)
-        
-        candidates_considered = [s.provider for s in valid_candidates]
+        candidates = list((await self.session.execute(stmt)).scalars().all())
+
+        per_variable: List[Dict[str, Any]] = []
+        chosen_by_var: Dict[str, SourceRegistry] = {}
+        considered_order: List[str] = []
+        all_failed: List[str] = []
         fallback_occurred = False
-        selected_source = None
-        reason = "No suitable sources found."
-        
-        # Step 3 & 4: Attempt connection adhering to Sovereign Priority (Rule R-8)
-        for source in valid_candidates:
-            success = await self._attempt_connection(source)
-            if success:
-                selected_source = source
-                source.access_status = "CONNECTED"
-                reason = f"Successfully connected to {source.provider} (Tier {source.priority_tier})."
-                self.session.add(source)
-                await self.session.commit()
-                break
-            else:
-                source.access_status = "SUBSTITUTED"
-                self.session.add(source)
-                await self.session.commit()
+
+        for var in required_variables:
+            covering = sorted(
+                [c for c in candidates if var in _variables_of(c)],
+                key=lambda s: (s.priority_tier, s.provider),
+            )
+            names = [c.provider for c in covering]
+            for n in names:
+                if n not in considered_order:
+                    considered_order.append(n)
+
+            chosen: Optional[SourceRegistry] = None
+            failed: List[str] = []
+            for src in covering:
+                if await self._attempt_connection(src):
+                    chosen = src
+                    src.access_status = "CONNECTED"
+                    self.session.add(src)
+                    break
+                failed.append(src.provider)
+                # Only ever a downgrade: a source is never promoted to
+                # CONNECTED by a failed probe.
+                src.access_status = "SUBSTITUTED"
+                self.session.add(src)
+                logger.warning("Tier %s source %s did not connect for '%s'; falling through.",
+                               src.priority_tier, src.provider, var)
+
+            if failed:
                 fallback_occurred = True
-                logger.warning(f"Tier {source.priority_tier} source {source.provider} failed. Attempting fallback.")
-                
-        # Step 5: Construct structured decision log
-        log = DiscoveryDecisionLog(
-            candidates_considered=candidates_considered,
-            chosen_source=selected_source.provider if selected_source else None,
-            priority_tier=selected_source.priority_tier if selected_source else None,
-            reason=reason,
-            fallback_occurred=fallback_occurred
-        )
-        
+                all_failed.extend(f for f in failed if f not in all_failed)
+            if chosen is not None:
+                chosen_by_var[var] = chosen
+
+            per_variable.append({
+                "variable": var,
+                "candidates": [{"provider": c.provider, "priority_tier": c.priority_tier,
+                                "access_status": c.access_status} for c in covering],
+                "chosen": chosen.provider if chosen else None,
+                "chosen_source_id": chosen.source_id if chosen else None,
+                "priority_tier": chosen.priority_tier if chosen else None,
+                "attempted_first": names[0] if names else None,
+                "failed": failed,
+            })
+
+        selected: List[SourceRegistry] = []
+        for src in chosen_by_var.values():
+            if src not in selected:
+                selected.append(src)
+        selected.sort(key=lambda s: (s.priority_tier, s.provider))
+
+        primary = selected[0] if selected else None
+        reason = self._reason(required_variables, per_variable, primary, all_failed)
+
+        try:
+            await self.session.commit()
+        except Exception:  # pragma: no cover - a read-only probe must not 500 a query
+            logger.exception("Could not persist registry access_status updates.")
+
         return DiscoveryResult(
-            selected_sources=[selected_source] if selected_source else [],
-            log=log
+            selected_sources=selected,
+            log=DiscoveryDecisionLog(
+                candidates_considered=considered_order,
+                chosen_source=primary.provider if primary else None,
+                priority_tier=primary.priority_tier if primary else None,
+                reason=reason,
+                fallback_occurred=fallback_occurred,
+                failed=all_failed,
+                per_variable=per_variable,
+            ),
         )
+
+    @staticmethod
+    def _reason(required: List[str], per_variable: List[Dict[str, Any]],
+                primary: Optional[SourceRegistry], failed: List[str]) -> str:
+        if primary is None:
+            return (f"No registry source covering {', '.join(required)} could be reached "
+                    f"for this region.")
+        unresolved = [p["variable"] for p in per_variable if not p["chosen"]]
+        parts = [f"{primary.provider} (tier {primary.priority_tier}) selected as the primary "
+                 f"source for {', '.join(required)}."]
+        if failed:
+            parts.append(f"Tier-1 candidate(s) {', '.join(failed)} were attempted first, per "
+                         f"R-8, and did not connect; the substitution is recorded rather than "
+                         f"hidden.")
+        if unresolved:
+            parts.append(f"No source available for: {', '.join(unresolved)}.")
+        return " ".join(parts)

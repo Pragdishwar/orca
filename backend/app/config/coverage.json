@@ -1,0 +1,89 @@
+{
+  "_comment": "D-12. One row per PS26176 requirement line. Status is BUILT only where the running system actually does the thing; everything else is MOCKUP and says why. Do not mark a row BUILT to make the tally look better.",
+  "rows": [
+    {
+      "id": 1,
+      "requirement": "Accept a natural-language question about sea safety and answer it on a map with cited evidence",
+      "note": "Text query -> planner -> agent graph -> answer card, map layer spec, and an evidence panel listing the sources actually used.",
+      "status": "BUILT"
+    },
+    {
+      "id": 2,
+      "requirement": "Accept and answer in English, Malayalam and Tamil",
+      "note": "Language is detected and carried through the graph, and the UI selector is wired, but generated explanations are English-only templates. No translation model is integrated.",
+      "status": "MOCKUP"
+    },
+    {
+      "id": 3,
+      "requirement": "Carry conversational context across at least three turns",
+      "note": "Session holds location, time_window and boat_id; a new utterance overwrites only the fields it states. Chips render the retained context and flash on change.",
+      "status": "BUILT"
+    },
+    {
+      "id": 4,
+      "requirement": "Select data sources from a live registry rather than a hardcoded pipeline, prioritising ISRO/Indian sources",
+      "note": "Ranking function over the D-14 registry, tier-1 attempted first, fallback logged as its own trace step. New sources can be added via POST /api/registry with no code change.",
+      "status": "BUILT"
+    },
+    {
+      "id": 5,
+      "requirement": "Produce a return-window crossing verdict and turn-back time for a named inlet, specific to a registered hull class",
+      "note": "Deterministic index over wave/tide/direction/swell/lightning/cyclone, banded per hull via D-10. Two hull classes on identical conditions yield different verdicts.",
+      "status": "BUILT"
+    },
+    {
+      "id": 6,
+      "requirement": "Expose an inspectable multi-agent reasoning trace in which one agent's output changes another's decision",
+      "note": "Every node records input, output and duration; hinge events are detected and rendered with the cause stated. Trace is persisted and replayable by trace_id.",
+      "status": "BUILT"
+    },
+    {
+      "id": 7,
+      "requirement": "Refuse to publish any advisory whose language output contradicts its computed number",
+      "note": "Deterministic comparator checks the verdict token and every numeral in the generated text against the computed payload. 20-case M-03 suite passes, contradictions at 100%.",
+      "status": "BUILT"
+    },
+    {
+      "id": 8,
+      "requirement": "Poll hazard conditions on a fixed schedule, independent of any question, and raise alerts on threshold breach",
+      "note": "APScheduler job evaluates every registered boat against its hull threshold on an interval and writes alerts into the same PENDING_RELEASE pipeline a query uses.",
+      "status": "BUILT"
+    },
+    {
+      "id": 9,
+      "requirement": "Report a validated skill score against a naive baseline over a historical record",
+      "note": "Contingency table, POD, FAR and days-per-year recomputed from the record on every request, compared to Hs > 2.0 m at equal POD. Ground truth is synthetic, so this validates the method, not a field skill claim.",
+      "status": "BUILT"
+    },
+    {
+      "id": 10,
+      "requirement": "Serve five distinct stakeholder views from one shared agent stack",
+      "note": "Persona config (D-16) drives layers, framing and suggested queries. The graph is byte-identical across all five personas.",
+      "status": "BUILT"
+    },
+    {
+      "id": 11,
+      "requirement": "Compile every advisory into SMS, VHF script, printed slip and landing-centre board formats",
+      "note": "All four render from the live advisory with real character counts and hull-class buckets. VHF audio is a pre-rendered tone placeholder, not speech.",
+      "status": "MOCKUP"
+    },
+    {
+      "id": 12,
+      "requirement": "Check a declared fishing ground against restricted, protected and boundary zones before departure",
+      "note": "Point-in-polygon plus buffer against the zone layer, returning zone name, type and distance. Zone polygons are synthetic and flagged as such.",
+      "status": "BUILT"
+    },
+    {
+      "id": 13,
+      "requirement": "Compute a least-cost advisory route corridor with bearing and waypoints",
+      "note": "Endpoint returns a straight-line corridor with bearing and waypoints. No H3 cost surface and no A* search - the hazard cost grid is not built.",
+      "status": "MOCKUP"
+    },
+    {
+      "id": 14,
+      "requirement": "Run end-to-end offline on one laptop with no network calls",
+      "note": "Backend, database and all data are local; the demo needs no external service. Map base tiles still load from a CDN, so the map pane degrades to layers-only without network.",
+      "status": "MOCKUP"
+    }
+  ]
+}
