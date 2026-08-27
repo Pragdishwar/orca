@@ -323,19 +323,19 @@ export default function MapPane() {
       // Casing first, so the corridor reads against water, land or ferry lines.
       add({
         id: 'route-casing', type: 'line', source: 'route',
-        filter: ['==', ['geometry-type'], 'LineString'],
+        filter: ['==', ['get', 'kind'], 'route'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': '#431407', 'line-width': 8, 'line-opacity': 0.9 },
       });
       add({
         id: 'route-line', type: 'line', source: 'route',
-        filter: ['==', ['geometry-type'], 'LineString'],
+        filter: ['==', ['get', 'kind'], 'route'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': '#f97316', 'line-width': 4, 'line-opacity': 1 },
       });
       add({
         id: 'route-points', type: 'circle', source: 'route',
-        filter: ['==', ['geometry-type'], 'Point'],
+        filter: ['==', ['get', 'kind'], 'waypoint'],
         paint: {
           'circle-radius': 5, 'circle-color': '#f97316',
           'circle-stroke-color': '#431407', 'circle-stroke-width': 2,
@@ -350,12 +350,12 @@ export default function MapPane() {
       });
       add({
         id: 'inlet-line', type: 'line', source: 'inlet',
-        filter: ['==', ['geometry-type'], 'LineString'],
+        filter: ['==', ['get', 'kind'], 'channel_axis'],
         paint: { 'line-color': '#0f172a', 'line-width': 3 },
       });
       add({
         id: 'inlet-point', type: 'circle', source: 'inlet',
-        filter: ['==', ['geometry-type'], 'Point'],
+        filter: ['==', ['get', 'kind'], 'inlet'],
         paint: {
           'circle-radius': 8, 'circle-color': '#0f172a',
           'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3,
