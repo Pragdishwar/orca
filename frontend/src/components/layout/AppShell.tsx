@@ -11,7 +11,6 @@ const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
   { id: 'platform', label: 'Platform', Icon: Anchor },
   { id: 'alerts', label: 'Alerts', Icon: Bell },
   { id: 'validation', label: 'Validation', Icon: ShieldAlert },
-  { id: 'coverage', label: 'Coverage', Icon: Database },
   { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud },
   { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck },
 ];

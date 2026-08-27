@@ -5,7 +5,7 @@ import {
 } from '../api/client';
 
 export type TabId =
-  | 'platform' | 'alerts' | 'validation' | 'coverage' | 'offline_compile' | 'trust';
+  | 'platform' | 'alerts' | 'validation' | 'offline_compile' | 'trust';
 
 export interface ChatMessage {
   id: string;
