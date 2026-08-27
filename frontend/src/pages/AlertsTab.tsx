@@ -59,7 +59,7 @@ export default function AlertsTab() {
             {/* Expanded Content Mock */}
             {alert.severity === 'Severe' && (
               <div className="bg-slate-50 border-t p-4 text-sm text-gray-700 flex flex-col gap-2">
-                <p><strong>Trigger Detail:</strong> Deterministic hazard index breached unsafe threshold (0.75 > 0.70) primarily driven by offshore swell height (4.5m) and aligning channel bearing.</p>
+                <p><strong>Trigger Detail:</strong> Deterministic hazard index breached unsafe threshold (0.75 &gt; 0.70) primarily driven by offshore swell height (4.5m) and aligning channel bearing.</p>
                 <p><strong>Action Required:</strong> Immediate broadcast to VHF channel 16 and SMS push to all registered FRP owners.</p>
               </div>
             )}
