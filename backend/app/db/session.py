@@ -28,7 +28,14 @@ if "pgbouncer=true" in DATABASE_URL.lower():
 
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
-engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+engine_kwargs = {"echo": False, "future": True}
+if not IS_SQLITE:
+    # Disable prepared statement caching which crashes Supabase PgBouncer transaction poolers
+    engine_kwargs["connect_args"] = {
+        "statement_cache_size": 0,
+    }
+
+engine = create_async_engine(DATABASE_URL, **engine_kwargs)
 async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
