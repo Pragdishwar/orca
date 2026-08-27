@@ -14,8 +14,8 @@ services:
           name: orca-redis
           property: connectionString
 
-redis:
-  - name: orca-redis
+  - type: redis
+    name: orca-redis
     plan: free
     region: singapore
     ipAllowList: [] # Allow all internal Render connections
