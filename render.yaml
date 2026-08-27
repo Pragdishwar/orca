@@ -3,19 +3,14 @@ services:
     name: orca-backend
     env: docker
     dockerfilePath: backend/Dockerfile
-    region: singapore # Closest to India for reduced latency
+    region: singapore # closest to India
     plan: free
+    healthCheckPath: /api/health
     envVars:
+      # Optional. Leave unset and the API runs on a local SQLite file, which is
+      # enough for the prototype. Set it to a postgresql+asyncpg:// URL to use
+      # a managed Postgres instead.
       - key: DATABASE_URL
-        sync: false # You will manually paste your Supabase Connection String here in the Render Dashboard
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: orca-redis
-          property: connectionString
-
-  - type: redis
-    name: orca-redis
-    plan: free
-    region: singapore
-    ipAllowList: [] # Allow all internal Render connections
+        sync: false
+      - key: POLL_INTERVAL_MINUTES
+        value: "15"

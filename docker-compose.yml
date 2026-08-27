@@ -1,51 +1,52 @@
-version: '3.8'
-
+# Minimal bring-up: `docker compose up` and the stack is running.
+#
+# No database service is required. The API creates its schema and seeds itself
+# on startup (backend/app/db/bootstrap.py), defaulting to a local SQLite file.
+# Uncomment the `db` service and DATABASE_URL below to run against Postgres.
 services:
-  db:
-    image: postgis/postgis:15-3.4
-    environment:
-      POSTGRES_USER: orca_user
-      POSTGRES_PASSWORD: orca_password
-      POSTGRES_DB: orca_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U orca_user -d orca_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     environment:
-      - DATABASE_URL=postgresql+asyncpg://orca_user:orca_password@db/orca_db
+      - POLL_INTERVAL_MINUTES=15
+      # - DATABASE_URL=postgresql+asyncpg://orca_user:orca_password@db/orca_db
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    command: >
-      bash -c "python -m backend.scripts.seed_demo && uvicorn backend.app.main:app --host 0.0.0.0 --port 8000"
+    volumes:
+      - orca_data:/app/backend
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+
+  # db:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     POSTGRES_USER: orca_user
+  #     POSTGRES_PASSWORD: orca_password
+  #     POSTGRES_DB: orca_db
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U orca_user -d orca_db"]
+  #     interval: 5s
+  #     retries: 5
 
 volumes:
-  pgdata:
+  orca_data:
+  # pgdata:

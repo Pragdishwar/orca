@@ -1,147 +1,280 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Clock, MapPin, Send, Ship, TriangleAlert, X,
+} from 'lucide-react';
 import { useOrcaStore } from '../../store/useOrcaStore';
-import { Mic, Send, X, AlertTriangle, ShieldCheck, Clock, MapPin, Zap, CheckCircle2 } from 'lucide-react';
+import { VerdictBadge } from '../ui/Primitives';
+import type { QueryResponse } from '../../api/client';
+
+const CHIP_META: Record<string, { Icon: React.ElementType; label: string; field: string }> = {
+  location: { Icon: MapPin, label: 'Location', field: 'location' },
+  time_window: { Icon: Clock, label: 'When', field: 'time_label' },
+  boat: { Icon: Ship, label: 'Boat', field: 'hull_class' },
+};
+
+/** FR-04: retained context is visible, and the field that changed flashes. */
+function ContextChips() {
+  const { context, updatedFields, clearContextField } = useOrcaStore();
+  const entries = Object.entries(CHIP_META).filter(
+    ([, meta]) => context[meta.field]);
+
+  if (!entries.length) {
+    return <p className="text-xs text-slate-400">No context retained yet.</p>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {entries.map(([key, meta]) => {
+        const flash = updatedFields.includes(key);
+        return (
+          <span
+            key={key}
+            title={`${meta.label} carried across turns`}
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-1
+              text-xs font-medium transition-colors ${flash
+                ? 'animate-pulse border-sky-400 bg-sky-100 text-sky-900'
+                : 'border-slate-300 bg-white text-slate-700'}`}
+          >
+            <meta.Icon className="h-3 w-3" aria-hidden />
+            {String(context[meta.field]).replace(/_/g, ' ')}
+            <button
+              onClick={() => clearContextField(meta.field)}
+              aria-label={`Clear ${meta.label}`}
+              className="ml-0.5 rounded-full p-0.5 hover:bg-slate-200"
+            >
+              <X className="h-3 w-3" aria-hidden />
+            </button>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function AnswerCard({ res }: { res: QueryResponse }) {
+  const rejected = res.guard.result === 'REJECT';
+  return (
+    <div className={`w-full rounded-xl border bg-white p-4 shadow-sm ${rejected
+      ? 'border-red-300' : 'border-slate-200'}`}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b
+        border-slate-200 pb-3">
+        <VerdictBadge verdict={res.verdict} />
+        <span className="font-mono text-[10px] text-slate-500">
+          {res.hull_label} · {res.date}
+        </span>
+      </div>
+
+      {rejected && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-red-300
+          bg-red-50 p-3 text-xs text-red-900">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            <strong>Guard rejected this advisory ({res.guard.reason}).</strong> The
+            generated text contradicted the computed verdict, so the official bulletin is
+            shown below instead.
+          </span>
+        </div>
+      )}
+
+      <p className="mb-3 text-sm leading-relaxed text-slate-800">{res.answer}</p>
+
+      {res.intent_result?.points && (
+        <ul className="mb-3 space-y-1">
+          {res.intent_result.points.map((p) => (
+            <li key={p.pfz_id} className="flex items-center gap-2 rounded border
+              border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
+              <span className="font-mono font-bold">{p.pfz_id}</span>
+              <span>{p.distance_km} km</span>
+              <span className="text-emerald-700">bearing {p.bearing_deg}°</span>
+              <span className="ml-auto text-emerald-700">{p.depth_m} m deep</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {res.intent_result?.zones && (
+        <ul className="mb-3 space-y-1">
+          {res.intent_result.zones.filter((z) => z.status !== 'CLEAR').map((z) => (
+            <li key={z.name} className="flex items-center gap-2 rounded border
+              border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+              <span className="font-bold">{z.status}</span>
+              <span>{z.name}</span>
+              <span className="ml-auto">{z.distance_km} km · {z.type}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {res.intent_result && (
+        <p className="mb-3 rounded bg-slate-50 px-2 py-1 text-[11px] text-slate-500">
+          Crossing verdict for this date is shown below as context — it was computed and
+          guarded even though you asked a different question.
+        </p>
+      )}
+
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        <Cell label="Hazard index" value={res.index_value.toFixed(3)} />
+        <Cell
+          label="Return window"
+          value={res.return_window
+            ? `${res.return_window.start_label}–${res.return_window.end_label}`
+            : 'none'}
+        />
+        <Cell label="Turn back by" value={res.turn_back_time ?? 'n/a'} />
+      </div>
+
+      {res.date_mapped_from_request && (
+        <p className="mt-3 text-[11px] italic text-slate-500">
+          The analysis record covers 2022–2024, so this answer uses the same calendar day
+          in the most recent record year.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Cell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded border border-slate-200 bg-slate-50 p-2">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+        {label}
+      </div>
+      <div className="mt-0.5 font-mono text-sm text-slate-900">{value}</div>
+    </div>
+  );
+}
 
 export default function ConversationPane() {
-  const { persona, chatHistory, submitQuery, isQuerying } = useOrcaStore();
-  const [context, setContext] = useState({ location: 'Muthalapozhi', time: 'Tomorrow 08:00', boat: 'B-XYZ' });
-  const [isRecording, setIsRecording] = useState(false);
-  const [query, setQuery] = useState('');
-  
-  const removeContext = (key: keyof typeof context) => setContext({ ...context, [key]: '' });
+  const {
+    chatHistory, isQuerying, submitQuery, personas, persona, setPersona,
+  } = useOrcaStore();
+  const [text, setText] = useState('');
+  const endRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!query.trim() || isQuerying) return;
-    submitQuery(query);
-    setQuery('');
-  };
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory.length, isQuerying]);
 
-  const renderVerdictBadge = (verdict?: string) => {
-    if (verdict === 'DO_NOT_CROSS') {
-      return <div className="flex items-center text-red-600 font-black text-lg tracking-tight"><AlertTriangle className="w-5 h-5 mr-2" /> DO NOT CROSS</div>;
-    }
-    if (verdict === 'MARGINAL') {
-      return <div className="flex items-center text-amber-500 font-black text-lg tracking-tight"><AlertTriangle className="w-5 h-5 mr-2" /> MARGINAL</div>;
-    }
-    if (verdict === 'SAFE') {
-      return <div className="flex items-center text-emerald-600 font-black text-lg tracking-tight"><CheckCircle2 className="w-5 h-5 mr-2" /> SAFE</div>;
-    }
-    return <div className="flex items-center text-gray-500 font-black text-lg tracking-tight">UNKNOWN</div>;
+  const activePersona = personas.find((p) => p.persona_id === persona);
+  const suggestions = activePersona?.suggested_queries ?? [];
+
+  const send = (value?: string) => {
+    const q = (value ?? text).trim();
+    if (!q || isQuerying) return;
+    submitQuery(q);
+    setText('');
   };
 
   return (
-    <div className="flex flex-col h-full relative">
-      {/* Top Context Bar */}
-      <div className="bg-slate-50 border-b p-3">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-xs font-bold text-gray-500 uppercase">Current Context</h3>
-          <select className="text-xs bg-white border rounded px-2 py-1 outline-none">
-            <option>Fisherman Persona</option>
-            <option>Coast Guard Persona</option>
+    <div className="flex h-full flex-col">
+      <div className="border-b border-slate-200 bg-slate-50 p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            Retained context
+          </h3>
+          <select
+            aria-label="Persona"
+            value={persona}
+            onChange={(e) => setPersona(e.target.value)}
+            className="rounded border border-slate-300 bg-white px-2 py-1 text-xs
+              text-slate-700 outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            {personas.length === 0 && <option value="fisherman">Fisherman</option>}
+            {personas.map((p) => (
+              <option key={p.persona_id} value={p.persona_id}>{p.label}</option>
+            ))}
           </select>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {context.location && (
-            <div className="flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full animate-pulse-once">
-              <MapPin className="w-3 h-3 mr-1" /> {context.location}
-              <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => removeContext('location')} />
-            </div>
-          )}
-          {context.time && (
-            <div className="flex items-center bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full animate-pulse-once">
-              <Clock className="w-3 h-3 mr-1" /> {context.time}
-              <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => removeContext('time')} />
-            </div>
-          )}
-        </div>
+        <ContextChips />
+        {activePersona && (
+          <p className="mt-2 text-[11px] italic text-slate-500">
+            {activePersona.answer_framing}
+          </p>
+        )}
       </div>
 
-      {/* Turn History List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3">
         {chatHistory.length === 0 && !isQuerying && (
-           <div className="text-center text-gray-400 mt-10 text-sm">Ask me if it's safe to go fishing...</div>
+          <div className="space-y-3">
+            <p className="pt-4 text-center text-sm text-slate-500">
+              Ask about crossing the Muthalapozhi bar.
+            </p>
+            <div className="grid gap-2">
+              {suggestions.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => send(q)}
+                  className="rounded-lg border border-slate-200 bg-white p-2.5 text-left
+                    text-xs text-slate-700 hover:border-sky-300 hover:bg-sky-50"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
-        {chatHistory.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'user' ? (
-              <div className="bg-blue-600 text-white p-3 rounded-xl rounded-tr-sm max-w-[85%] shadow-sm text-sm">
-                {msg.text}
+        {chatHistory.map((m) => (
+          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : ''}`}>
+            {m.role === 'user' ? (
+              <div className="max-w-[85%] rounded-xl rounded-tr-sm bg-sky-600 px-3 py-2
+                text-sm text-white shadow-sm">
+                {m.text}
               </div>
+            ) : m.error ? (
+              <div className="w-full rounded-xl border border-red-300 bg-red-50 p-3
+                text-sm text-red-900">
+                {m.text}
+              </div>
+            ) : m.response ? (
+              <AnswerCard res={m.response} />
             ) : (
-              <div className={`bg-white border ${msg.verdict === 'DO_NOT_CROSS' ? 'border-red-200' : msg.verdict === 'SAFE' ? 'border-emerald-200' : 'border-gray-200'} p-4 rounded-xl rounded-tl-sm max-w-[95%] shadow-sm w-full`}>
-                <div className="flex items-center justify-between mb-3 border-b pb-3">
-                  {renderVerdictBadge(msg.verdict)}
-                  <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded font-mono">ORCA ENGINE</span>
-                </div>
-                
-                <p className="text-sm text-gray-700 mb-4 font-medium leading-relaxed">
-                  {msg.text}
-                </p>
-                
-                {msg.metrics && (
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-gray-50 p-2 rounded border border-gray-100">
-                      <span className="block text-gray-400 font-bold mb-1">RETURN WINDOW</span>
-                      <span className="text-gray-900 font-mono text-sm">{msg.metrics.returnWindow || 'N/A'}</span>
-                    </div>
-                    <div className="bg-gray-50 p-2 rounded border border-gray-100">
-                      <span className="block text-gray-400 font-bold mb-1">TURN-BACK TIME</span>
-                      <span className="text-gray-900 font-mono text-sm">{msg.metrics.turnBackTime || 'N/A'}</span>
-                    </div>
-                  </div>
-                )}
+              <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+                {m.text}
               </div>
             )}
           </div>
         ))}
 
         {isQuerying && (
-          <div className="flex justify-start">
-            <div className="bg-white border border-gray-200 p-3 rounded-xl rounded-tl-sm shadow-sm text-sm text-gray-500 flex items-center">
-              <span className="animate-pulse mr-2">⠋</span> ORCA is analyzing ocean and weather data...
-            </div>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200
+            bg-white px-3 py-2 text-sm text-slate-500">
+            <span className="h-2 w-2 animate-ping rounded-full bg-sky-500" />
+            Planner → Discovery → Risk → Guard…
           </div>
         )}
+        <div ref={endRef} />
       </div>
 
-      {/* Input Box */}
-      <div className="p-3 bg-white border-t relative">
-        {!query && chatHistory.length === 0 && (
-          <div className="absolute bottom-16 left-3 right-3 grid grid-cols-2 gap-2">
-            <button onClick={() => { setQuery("Check waves tomorrow"); submitQuery("Check waves tomorrow"); }} className="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 p-2 rounded text-left border">Check waves tomorrow</button>
-            <button onClick={() => { setQuery("Is it safe to go out to Wadge Bank tomorrow morning?"); submitQuery("Is it safe to go out to Wadge Bank tomorrow morning?"); }} className="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 p-2 rounded text-left border">Is it safe to go out?</button>
-          </div>
-        )}
-
-        <div className="flex items-center bg-gray-100 rounded-xl p-1 shadow-inner border border-gray-200">
-          <button 
-            onClick={() => setIsRecording(!isRecording)}
-            className={`p-3 rounded-full transition-colors ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-gray-500 hover:bg-gray-200'}`}
+      <div className="border-t border-slate-200 bg-white p-3">
+        <div className="flex items-end gap-2 rounded-xl border border-slate-200
+          bg-slate-100 p-1.5">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+            }}
+            rows={1}
+            aria-label="Ask ORCA"
+            placeholder="Is it safe to go out tomorrow morning?"
+            className="min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm
+              text-slate-800 outline-none"
+          />
+          <button
+            onClick={() => send()}
+            disabled={isQuerying || !text.trim()}
+            aria-label="Send"
+            className="rounded-full bg-sky-600 p-2.5 text-white shadow-sm
+              hover:bg-sky-700 disabled:bg-slate-300 disabled:text-slate-500"
           >
-            <Mic className="w-5 h-5" />
-          </button>
-          
-          <div className="flex-1 px-2 relative">
-            <textarea 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder="Ask for marine advisory..."
-              className="w-full bg-transparent outline-none resize-none text-sm py-3 text-gray-800"
-              rows={1}
-            />
-            <span className="absolute right-2 top-3 text-[10px] font-bold text-gray-400">EN</span>
-          </div>
-          
-          <button 
-            onClick={handleSend}
-            disabled={isQuerying || !query.trim()}
-            className={`p-3 rounded-full transition-colors shadow-sm mx-1 ${isQuerying || !query.trim() ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-          >
-            <Send className="w-4 h-4" />
+            <Send className="h-4 w-4" aria-hidden />
           </button>
         </div>
+        <p className="mt-1.5 text-[10px] text-slate-400">
+          Voice input is not built. Malayalam and Tamil are detected by script, but
+          answers are composed in English — see the Coverage tab.
+        </p>
       </div>
     </div>
   );

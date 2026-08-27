@@ -1,28 +1,41 @@
 #!/bin/bash
+# End-to-end check that the prototype actually does what the Coverage tab claims.
+# Usage: ./verify_build.sh [base_url]      default http://127.0.0.1:8000
 set -e
+BASE="${1:-http://127.0.0.1:8000}"
+SID=$(python -c "import uuid;print(uuid.uuid4())")
 
-echo "==============================================="
-echo "ORCA (PS26176) - Regression Verification Script"
-echo "==============================================="
+say() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
+q()   { curl -sS -X POST "$BASE/api/query" -H 'Content-Type: application/json' \
+          -d "{\"session_id\":\"$SID\",\"query_text\":\"$1\",\"force_failure\":${2:-false}}"; }
 
-echo "[1/3] Checking Docker Compose Services Status..."
-docker compose ps
+say "Unit tests"
+python -m pytest -q
 
-echo "[2/3] Executing Golden Test Cases (Dataset M-02 & M-03)..."
-# Execute pytest strictly on the Guard node module against dataset limits
-docker compose exec backend pytest backend/tests/test_guard.py -v
+say "Health"
+curl -sS "$BASE/api/health"
 
-echo "[3/3] Fetching Backend Application Health..."
-# Note: assuming backend has a root or health endpoint, or just checking connection
-docker compose exec backend python -c "
-import urllib.request
-try:
-    response = urllib.request.urlopen('http://localhost:8000/sentinel/status')
-    print('Sentinel Health: OK')
-except Exception as e:
-    print('Sentinel Health Error:', e)
-"
+say "Turn 1 — crossing verdict, discovery, hinge"
+q "Is it safe to go out tomorrow morning?" | python -m json.tool | head -30
 
-echo "==============================================="
-echo "VERIFICATION COMPLETE: ALL PIPELINES NOMINAL"
-echo "==============================================="
+say "Turn 2 — context carries, only the date changes"
+q "And the day after?" | python -c "import sys,json;d=json.load(sys.stdin);print('date',d['date'],'hull',d['hull_class'],'updated',d['updated_fields'])"
+
+say "Turn 3 — hull changes, date is retained, verdict changes"
+q "What about the 12 m trawler?" | python -c "import sys,json;d=json.load(sys.stdin);print('date',d['date'],'hull',d['hull_class'],'verdict',d['verdict'],'updated',d['updated_fields'])"
+
+say "Guard rejects a forced contradiction"
+q "Is it safe tomorrow?" true | python -c "import sys,json;d=json.load(sys.stdin);print('guard',d['guard'])"
+
+say "Validation recomputes at three operating points"
+for t in 0.35 0.44 0.55; do
+  curl -sS "$BASE/api/validation?threshold=$t" | python -c "import sys,json;d=json.load(sys.stdin);c=d['contingency'];print(' thr',d['threshold'],'POD',c['pod'],'FAR',c['far'],'days/yr',c['days_per_year'])"
+done
+
+say "Sentinel poll produces alerts with no query asked"
+curl -sS -X POST "$BASE/api/sentinel/trigger" | python -m json.tool
+
+say "Coverage matrix"
+curl -sS "$BASE/api/coverage" | python -c "import sys,json;d=json.load(sys.stdin);print(d['summary'])"
+
+printf '\n\033[1;32mAll checks completed.\033[0m\n'

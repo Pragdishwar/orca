@@ -1,136 +1,211 @@
 import { create } from 'zustand';
+import {
+  api, ApiError, AlertRow, Boat, Health, HingeEvent, Persona, QueryResponse,
+  SourceRow, TraceStep, Verdict,
+} from '../api/client';
 
-export interface Boat {
-  boatId: string;
-  hullClass: string;
-  lengthM: number;
-  engineHp: number;
-  homeHarbour: string;
-  usualGrounds: string[];
-}
-
-export interface Advisory {
-  advisoryId: string;
-  verdict: 'SAFE' | 'MARGINAL' | 'DO_NOT_CROSS';
-  indexValue: number;
-}
-
-export interface PipelineStatus {
-  isFresh: boolean;
-  stalenessHours: number;
-  source: string;
-}
+export type TabId =
+  | 'platform' | 'alerts' | 'validation' | 'coverage' | 'offline_compile' | 'trust';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'agent';
   text: string;
-  verdict?: 'SAFE' | 'MARGINAL' | 'DO_NOT_CROSS' | 'UNKNOWN';
-  metrics?: {
-    returnWindow?: string;
-    turnBackTime?: string;
-  };
+  error?: boolean;
+  response?: QueryResponse;
 }
 
 interface OrcaState {
-  sessionId: string | null;
+  sessionId: string;
+  activeTab: TabId;
+  language: string;
+  persona: string;
+  personas: Persona[];
+
+  boats: Boat[];
   activeBoat: Boat | null;
-  language: 'en' | 'ml' | 'ta';
-  persona: 'fisherman' | 'disaster_mgmt' | 'coast_guard' | 'policy_maker' | 'researcher';
-  activeTab: 'platform' | 'alerts' | 'validation' | 'coverage' | 'offline_compile' | 'trust';
-  activeAdvisory: Advisory | null;
-  pipelineStatus: PipelineStatus;
-  unreleasedAlertsCount: number;
-  officialAdvisoryText: string;
-  officialAdvisoryVerdict: 'SAFE' | 'MARGINAL' | 'DO_NOT_CROSS' | null;
-  guardDisagreement: boolean;
   isBoatModalOpen: boolean;
-  
-  // Chat State
+
+  health: Health | null;
+  healthError: string | null;
+
   chatHistory: ChatMessage[];
   isQuerying: boolean;
-  activeTrace: any; // Store the trace data for EvidencePane
-  activeSources: any[]; // Store sources for EvidencePane
+  /** The most recent successful answer. Drives map, evidence and compile tabs. */
+  active: QueryResponse | null;
+  context: Record<string, any>;
+  updatedFields: string[];
 
-  // Actions
-  setLanguage: (lang: 'en' | 'ml' | 'ta') => void;
-  setActiveTab: (tab: OrcaState['activeTab']) => void;
-  setBoatModalOpen: (isOpen: boolean) => void;
-  setActiveBoat: (boat: Boat) => void;
-  submitQuery: (text: string) => Promise<void>;
+  trace: TraceStep[];
+  hinges: HingeEvent[];
+  sources: SourceRow[];
+  sourcesRule: string;
+
+  alerts: AlertRow[];
+  alertSummary: Record<string, number>;
+
+  bootError: string | null;
+
+  setActiveTab: (t: TabId) => void;
+  setPersona: (p: string) => void;
+  setLanguage: (l: string) => void;
+  setBoatModalOpen: (o: boolean) => void;
+  setActiveBoat: (b: Boat | null) => void;
+
+  boot: () => Promise<void>;
+  refreshHealth: () => Promise<void>;
+  refreshBoats: () => Promise<void>;
+  refreshAlerts: () => Promise<void>;
+  submitQuery: (text: string, opts?: { forceFailure?: boolean }) => Promise<void>;
+  clearContextField: (field: string) => void;
 }
 
+const errText = (e: unknown) =>
+  e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'Unknown error';
+
 export const useOrcaStore = create<OrcaState>((set, get) => ({
-  sessionId: crypto.randomUUID(), // Initialize with a real UUID
-  activeBoat: null,
+  sessionId: crypto.randomUUID(),
+  activeTab: 'platform',
   language: 'en',
   persona: 'fisherman',
-  activeTab: 'platform',
-  activeAdvisory: null,
-  pipelineStatus: { isFresh: true, stalenessHours: 0, source: 'MOSDAC' },
-  unreleasedAlertsCount: 0,
-  officialAdvisoryText: 'INCOIS: Generally safe for all operations.',
-  officialAdvisoryVerdict: 'SAFE',
-  guardDisagreement: false,
+  personas: [],
+
+  boats: [],
+  activeBoat: null,
   isBoatModalOpen: false,
-  
+
+  health: null,
+  healthError: null,
+
   chatHistory: [],
   isQuerying: false,
-  activeTrace: null,
-  activeSources: [],
-  
-  setLanguage: (lang) => set({ language: lang }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
-  setBoatModalOpen: (isOpen) => set({ isBoatModalOpen: isOpen }),
-  setActiveBoat: (boat) => set({ activeBoat: boat }),
-  
-  submitQuery: async (text: string) => {
-    const { sessionId, chatHistory } = get();
-    
-    // Optimistic UI update
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', text };
-    set({ chatHistory: [...chatHistory, userMsg], isQuerying: true });
+  active: null,
+  context: {},
+  updatedFields: [],
+
+  trace: [],
+  hinges: [],
+  sources: [],
+  sourcesRule: '',
+
+  alerts: [],
+  alertSummary: {},
+
+  bootError: null,
+
+  setActiveTab: (activeTab) => set({ activeTab }),
+  setPersona: (persona) => set({ persona }),
+  setLanguage: (language) => set({ language }),
+  setBoatModalOpen: (isBoatModalOpen) => set({ isBoatModalOpen }),
+  setActiveBoat: (activeBoat) => set({ activeBoat }),
+
+  boot: async () => {
+    try {
+      const [health, personasRes, boats, sourcesRes, alertsRes] = await Promise.all([
+        api.health(), api.personas(), api.boats(), api.sources(), api.alerts(),
+      ]);
+      set({
+        health,
+        healthError: null,
+        personas: personasRes.personas,
+        boats,
+        activeBoat: get().activeBoat ?? boats[0] ?? null,
+        sources: sourcesRes.sources,
+        sourcesRule: sourcesRes.rule,
+        alerts: alertsRes.alerts,
+        alertSummary: alertsRes.summary,
+        bootError: null,
+      });
+    } catch (e) {
+      set({ bootError: errText(e), healthError: errText(e) });
+    }
+  },
+
+  refreshHealth: async () => {
+    try {
+      set({ health: await api.health(), healthError: null });
+    } catch (e) {
+      set({ healthError: errText(e) });
+    }
+  },
+
+  refreshBoats: async () => {
+    try {
+      const boats = await api.boats();
+      const active = get().activeBoat;
+      set({
+        boats,
+        activeBoat: active && boats.find((b) => b.boat_id === active.boat_id)
+          ? active
+          : boats[0] ?? null,
+      });
+    } catch { /* the panel shows its own error state */ }
+  },
+
+  refreshAlerts: async () => {
+    try {
+      const res = await api.alerts();
+      set({ alerts: res.alerts, alertSummary: res.summary });
+    } catch { /* handled in the tab */ }
+  },
+
+  clearContextField: (field) =>
+    set((s) => ({ context: { ...s.context, [field]: '' } })),
+
+  submitQuery: async (text, opts) => {
+    const { sessionId, persona, chatHistory, activeBoat } = get();
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    // If a boat is selected and the utterance names no hull, steer the query
+    // at that boat so the answer matches the boat in the header.
+    const withBoat =
+      activeBoat && !/canoe|trawler|frp|skiff|\d+\s*m\b/i.test(trimmed)
+        ? `${trimmed} (${activeBoat.hull_class.replace(/_/g, ' ').toLowerCase()})`
+        : trimmed;
+
+    set({
+      chatHistory: [...chatHistory,
+        { id: crypto.randomUUID(), role: 'user', text: trimmed }],
+      isQuerying: true,
+    });
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          query_text: text
-        })
+      const res = await api.query({
+        session_id: sessionId,
+        query_text: withBoat,
+        persona,
+        force_failure: opts?.forceFailure ?? false,
       });
 
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
+      let trace: TraceStep[] = [];
+      try {
+        trace = (await api.trace(res.trace_id)).nodes.steps;
+      } catch { trace = []; }
 
-      const agentMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'agent',
-        text: data.answer,
-        verdict: data.verdict,
-        metrics: {
-          returnWindow: data.return_window?.window || 'N/A'
-        }
-      };
-
-      set((state) => ({
-        chatHistory: [...state.chatHistory, agentMsg],
+      set((s) => ({
+        chatHistory: [...s.chatHistory,
+          { id: crypto.randomUUID(), role: 'agent', text: res.answer, response: res }],
         isQuerying: false,
-        activeSources: data.sources || [],
-        // In a real app we'd fetch the full trace by ID, but we'll store basic metadata here
-        activeTrace: { id: data.trace_id, guard: data.guard }
+        active: res,
+        context: res.context,
+        updatedFields: res.updated_fields,
+        language: res.language,
+        trace,
+        hinges: res.hinge_events,
+        sources: res.sources.length ? res.sources : s.sources,
       }));
-    } catch (error) {
-      console.error("Failed to fetch query:", error);
-      const errorMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'agent',
-        text: "System error: Failed to reach the ORCA engine. Please check your connection.",
-        verdict: 'UNKNOWN'
-      };
-      set((state) => ({ chatHistory: [...state.chatHistory, errorMsg], isQuerying: false }));
+      get().refreshHealth();
+    } catch (e) {
+      set((s) => ({
+        chatHistory: [...s.chatHistory, {
+          id: crypto.randomUUID(), role: 'agent', error: true,
+          text: `Could not reach the ORCA engine: ${errText(e)}`,
+        }],
+        isQuerying: false,
+      }));
     }
-  }
+  },
 }));
+
+export type { Verdict };
