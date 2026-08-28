@@ -152,9 +152,11 @@ export const Profile: React.FC = () => {
               onChange={(e) => setRole(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
             >
-              <option value="fisherman">Fisherman (Basic Access)</option>
-              <option value="researcher">Researcher (Advanced Access)</option>
-              <option value="admin">Administrator (Full Access)</option>
+              <option value="fisherman">Fisherman</option>
+              <option value="disaster_mgmt">Disaster Mgmt</option>
+              <option value="coast_guard">Coast Guard</option>
+              <option value="policy_maker">Policy Maker</option>
+              <option value="researcher">Researcher</option>
             </select>
           </div>
 

@@ -62,8 +62,8 @@ export default function PlatformTab() {
   return (
     <div className="flex flex-col">
       <HullStrip />
-      <div className="grid h-[calc(100vh-19rem)] min-h-[32rem] grid-cols-1 gap-3
-        lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.6fr)_minmax(0,0.95fr)]">
+      <div className="grid h-[calc(100vh-14rem)] min-h-[40rem] grid-cols-1 gap-3
+        lg:grid-cols-[minmax(0,0.75fr)_minmax(0,2.2fr)_minmax(0,0.85fr)]">
         <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200
           bg-white shadow-sm">
           <ConversationPane />

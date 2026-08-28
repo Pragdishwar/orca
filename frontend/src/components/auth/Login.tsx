@@ -186,8 +186,10 @@ export const Login: React.FC = () => {
               onChange={(e) => setRole(e.target.value)}
             >
               <option value="fisherman">Fisherman</option>
+              <option value="disaster_mgmt">Disaster Mgmt</option>
+              <option value="coast_guard">Coast Guard</option>
+              <option value="policy_maker">Policy Maker</option>
               <option value="researcher">Researcher</option>
-              <option value="admin">Administrator</option>
             </select>
           </div>
           

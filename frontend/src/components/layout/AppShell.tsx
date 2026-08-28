@@ -8,12 +8,12 @@ import BoatRegistrationModal from '../modals/BoatRegistrationModal';
 import { ProvenanceBadge } from '../ui/Primitives';
 
 export const TABS: { id: TabId; label: string; Icon: React.ElementType; roles: string[] }[] = [
-  { id: 'platform', label: 'Platform', Icon: Anchor, roles: ['admin', 'fisherman', 'researcher'] },
-  { id: 'alerts', label: 'Alerts', Icon: Bell, roles: ['admin', 'fisherman', 'researcher'] },
-  { id: 'validation', label: 'Validation', Icon: ShieldAlert, roles: ['admin', 'researcher'] },
-  { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud, roles: ['admin', 'researcher'] },
-  { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck, roles: ['admin', 'researcher'] },
-  { id: 'profile', label: 'Profile', Icon: UserIcon, roles: ['admin', 'fisherman', 'researcher'] },
+  { id: 'platform', label: 'Platform', Icon: Anchor, roles: ['admin', 'fisherman', 'disaster_mgmt', 'coast_guard', 'policy_maker', 'researcher'] },
+  { id: 'alerts', label: 'Alerts', Icon: Bell, roles: ['admin', 'fisherman', 'disaster_mgmt', 'coast_guard', 'policy_maker', 'researcher'] },
+  { id: 'validation', label: 'Validation', Icon: ShieldAlert, roles: ['admin', 'disaster_mgmt', 'coast_guard', 'policy_maker', 'researcher'] },
+  { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud, roles: ['admin', 'fisherman', 'disaster_mgmt', 'coast_guard', 'policy_maker', 'researcher'] },
+  { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck, roles: ['admin', 'disaster_mgmt', 'policy_maker', 'researcher'] },
+  { id: 'profile', label: 'Profile', Icon: UserIcon, roles: ['admin', 'fisherman', 'disaster_mgmt', 'coast_guard', 'policy_maker', 'researcher'] },
 ];
 
 /** Pipeline chip: fresh / stale / halted / failed, per R-2 bands. */
