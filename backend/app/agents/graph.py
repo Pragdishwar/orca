@@ -220,6 +220,8 @@ def synthesis_node(state: AgentState) -> AgentState:
     if api_key and not state.get("force_failure"):
         try:
             with httpx.Client() as client:
+                persona_config = config_store.persona(state.get('persona') or 'fisherman')
+                framing = persona_config.get('answer_framing', '')
                 prompt = f"""
 You are an expert coastal safety advisor for the ORCA project.
 The user asked: "{state.get('user_query')}"
@@ -229,6 +231,9 @@ Computed Conditions:
 - Verdict: {adv.get('verdict')}
 - Hazard Index: {adv.get('index_value')}
 - Explanation: {adv.get('explanation')}
+
+Response Framing:
+{framing}
 
 Formulate a concise, clear answer addressing the user's question, using the computed conditions above.
 CRITICAL: Do not include ANY numbers (including percentages or counts like 100%, 1, 2) in your response that are not explicitly provided in the Computed Conditions above. The safety guard will reject your response if it contains unauthorized numbers.
