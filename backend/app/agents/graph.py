@@ -9,6 +9,9 @@ detection is a real counterfactual: the index is recomputed with one input
 neutralised, and a hinge is recorded only when doing so changes the verdict.
 """
 import time
+import os
+import json
+import httpx
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, TypedDict
 
@@ -207,16 +210,52 @@ def routing_node(state: AgentState) -> AgentState:
 
 
 def synthesis_node(state: AgentState) -> AgentState:
-    """Assembles the explanation by template substitution (SRS 5.5).
-
-    No language model is wired in. `verdict_token` is emitted separately from
-    the computed verdict precisely so the guard has two independent things to
-    compare - and the forced-failure control corrupts it here.
-    """
+    """Assembles the explanation by template substitution or Groq LLM (SRS 5.5)."""
     t0 = time.perf_counter()
     adv = state["computed"]
     text = adv["explanation"]
     token = adv["verdict"]
+
+    api_key = os.environ.get("GROQ_API_KEY")
+    if api_key and not state.get("force_failure"):
+        try:
+            with httpx.Client() as client:
+                prompt = f"""
+You are an expert coastal safety advisor for the ORCA project.
+The user asked: "{state.get('user_query')}"
+
+Computed Conditions:
+- Inlet: {adv.get('inlet_name')}
+- Verdict: {adv.get('verdict')}
+- Hazard Index: {adv.get('index_value')}
+- Explanation: {adv.get('explanation')}
+
+Formulate a concise, clear answer addressing the user's question, using the computed conditions above.
+Ensure you strictly respond in JSON format with two keys:
+1. "explanation_text": Your detailed but concise response. Do not repeat the prompt.
+2. "verdict_token": The exact verdict token ("SAFE", "MARGINAL", or "DO_NOT_CROSS").
+"""
+                resp = client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "llama-3.1-8b-instant",
+                        "messages": [{"role": "system", "content": prompt}],
+                        "response_format": {"type": "json_object"}
+                    },
+                    timeout=10.0
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    content_str = data["choices"][0]["message"]["content"]
+                    content = json.loads(content_str)
+                    text = content.get("explanation_text", text)
+                    token = content.get("verdict_token", token)
+        except Exception as e:
+            print(f"Groq API error: {e}")
 
     if state.get("force_failure"):
         token = "SAFE" if adv["verdict"] != "SAFE" else "DO_NOT_CROSS"

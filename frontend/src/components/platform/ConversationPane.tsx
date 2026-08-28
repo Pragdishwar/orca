@@ -177,9 +177,9 @@ export default function ConversationPane() {
             <button
               onClick={() => setUseMockChat(!useMockChat)}
               className={`text-xs px-2 py-1 rounded border ${useMockChat ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-slate-200 border-slate-300 text-slate-700'}`}
-              title="Toggle Legacy Mode (disables real-time streaming)"
+              title="Toggle real-time streaming"
             >
-              Mock Chat {useMockChat ? 'ON' : 'OFF'}
+              Streaming {useMockChat ? 'OFF' : 'ON'}
             </button>
             <select
               aria-label="Persona"
