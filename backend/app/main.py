@@ -25,7 +25,6 @@ from backend.app.api.endpoints import (
     session_router,
     trace_router,
     validation_router,
-    auth_router,
 )
 from backend.app.db.bootstrap import bootstrap
 
@@ -112,7 +111,6 @@ app.include_router(alerts_router, prefix="/api/alerts", tags=["Alerts"])
 app.include_router(demo_router, prefix="/api/demo", tags=["Demo"])
 app.include_router(health_router, prefix="/api/health", tags=["Health"])
 app.include_router(sentinel_router, prefix="/api/sentinel", tags=["Sentinel"])
-app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 
 _STATIC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
 if os.path.isdir(_STATIC):

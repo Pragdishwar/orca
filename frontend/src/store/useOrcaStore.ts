@@ -63,6 +63,7 @@ interface OrcaState {
   
   user: { username: string, role: string } | null;
   token: string | null;
+  initAuth: () => void;
   login: (username: string, token: string, role: string) => void;
   logout: () => void;
 }
@@ -108,17 +109,30 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
   setActiveBoat: (activeBoat) => set({ activeBoat }),
   setUseMockChat: (useMockChat) => set({ useMockChat }),
 
-  user: localStorage.getItem('orca_user') ? JSON.parse(localStorage.getItem('orca_user')!) : null,
-  token: localStorage.getItem('orca_token'),
-  login: (username, token, role) => {
-    localStorage.setItem('orca_token', token);
-    localStorage.setItem('orca_user', JSON.stringify({ username, role }));
-    set({ user: { username, role }, token, activeTab: 'platform' });
+  user: null,
+  token: null,
+  initAuth: () => {
+    import('../api/supabase').then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          const role = session.user.user_metadata?.role || (session.user.email?.includes('admin') ? 'admin' : 'fisherman');
+          set({ user: { username: session.user.email || '', role }, token: session.access_token });
+        }
+      });
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          const role = session.user.user_metadata?.role || (session.user.email?.includes('admin') ? 'admin' : 'fisherman');
+          set({ user: { username: session.user.email || '', role }, token: session.access_token, activeTab: 'platform' });
+        } else {
+          set({ user: null, token: null });
+        }
+      });
+    });
   },
-  logout: () => {
-    localStorage.removeItem('orca_token');
-    localStorage.removeItem('orca_user');
-    set({ user: null, token: null });
+  login: () => {}, // unused now, handled by onAuthStateChange
+  logout: async () => {
+    const { supabase } = await import('../api/supabase');
+    await supabase.auth.signOut();
   },
 
   boot: async () => {
@@ -276,5 +290,7 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
     }
   },
 }));
+
+useOrcaStore.getState().initAuth();
 
 export type { Verdict };

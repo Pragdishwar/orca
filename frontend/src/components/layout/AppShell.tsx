@@ -8,11 +8,11 @@ import BoatRegistrationModal from '../modals/BoatRegistrationModal';
 import { ProvenanceBadge } from '../ui/Primitives';
 
 export const TABS: { id: TabId; label: string; Icon: React.ElementType; roles: string[] }[] = [
-  { id: 'platform', label: 'Platform', Icon: Anchor, roles: ['admin', 'user'] },
-  { id: 'alerts', label: 'Alerts', Icon: Bell, roles: ['admin', 'user'] },
-  { id: 'validation', label: 'Validation', Icon: ShieldAlert, roles: ['admin'] },
-  { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud, roles: ['admin'] },
-  { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck, roles: ['admin'] },
+  { id: 'platform', label: 'Platform', Icon: Anchor, roles: ['admin', 'fisherman', 'researcher'] },
+  { id: 'alerts', label: 'Alerts', Icon: Bell, roles: ['admin', 'fisherman', 'researcher'] },
+  { id: 'validation', label: 'Validation', Icon: ShieldAlert, roles: ['admin', 'researcher'] },
+  { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud, roles: ['admin', 'researcher'] },
+  { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck, roles: ['admin', 'researcher'] },
 ];
 
 /** Pipeline chip: fresh / stale / halted / failed, per R-2 bands. */

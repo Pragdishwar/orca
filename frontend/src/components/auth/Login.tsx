@@ -7,6 +7,7 @@ export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [role, setRole] = useState('fisherman');
   const [loading, setLoading] = useState(false);
   
   const login = useOrcaStore(state => state.login);
@@ -17,20 +18,22 @@ export const Login: React.FC = () => {
     setLoading(true);
     
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
+      const { supabase } = await import('../../api/supabase');
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: username, // assuming username is email for Supabase
+        password,
       });
       
-      if (!res.ok) {
-        throw new Error('Invalid credentials');
+      if (authError) {
+        throw new Error(authError.message);
       }
       
-      const data = await res.json();
-      login(data.username, data.token, data.role);
+      // Update the user's role metadata to match their selection
+      await supabase.auth.updateUser({
+        data: { role }
+      });
+      
+      // State update is handled automatically by onAuthStateChange in the store
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -58,14 +61,14 @@ export const Login: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="username">
-              Username
+              Email
             </label>
             <input
               id="username"
-              type="text"
+              type="email"
               required
               className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-              placeholder="Enter your username"
+              placeholder="Enter your email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
@@ -86,6 +89,22 @@ export const Login: React.FC = () => {
             />
           </div>
           
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="role">
+              Sign in as
+            </label>
+            <select
+              id="role"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 bg-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="fisherman">Fisherman</option>
+              <option value="researcher">Researcher</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          
           <button
             type="submit"
             disabled={loading}
@@ -101,7 +120,7 @@ export const Login: React.FC = () => {
         </form>
         
         <div className="mt-8 text-center text-xs text-slate-400">
-          For demo, use: admin/password or user/password
+          Please contact an administrator for an account.
         </div>
       </div>
     </div>

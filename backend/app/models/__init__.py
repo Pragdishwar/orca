@@ -10,7 +10,6 @@ from .zone import Zone
 from .ground import Ground
 from .official_advisory import OfficialAdvisory
 from .source_registry import SourceRegistry
-from .user import User
 
 __all__ = [
     "Boat",
@@ -24,6 +23,5 @@ __all__ = [
     "Zone",
     "Ground",
     "OfficialAdvisory",
-    "SourceRegistry",
-    "User"
+    "SourceRegistry"
 ]
