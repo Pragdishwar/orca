@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import {
   Anchor, Bell, Database, DownloadCloud, Radio, Server, Shield, ShieldAlert,
-  ShieldCheck, Ship, TriangleAlert, LogOut
+  ShieldCheck, Ship, TriangleAlert, LogOut, User as UserIcon
 } from 'lucide-react';
 import { useOrcaStore, TabId } from '../../store/useOrcaStore';
 import BoatRegistrationModal from '../modals/BoatRegistrationModal';
@@ -13,6 +13,7 @@ export const TABS: { id: TabId; label: string; Icon: React.ElementType; roles: s
   { id: 'validation', label: 'Validation', Icon: ShieldAlert, roles: ['admin', 'researcher'] },
   { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud, roles: ['admin', 'researcher'] },
   { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck, roles: ['admin', 'researcher'] },
+  { id: 'profile', label: 'Profile', Icon: UserIcon, roles: ['admin', 'fisherman', 'researcher'] },
 ];
 
 /** Pipeline chip: fresh / stale / halted / failed, per R-2 bands. */

@@ -8,6 +8,13 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [role, setRole] = useState('fisherman');
+  
+  // Extra profile fields for Sign Up
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
+  const [boatType, setBoatType] = useState('');
+
   const [loading, setLoading] = useState(false);
   
   const login = useOrcaStore(state => state.login);
@@ -28,7 +35,7 @@ export const Login: React.FC = () => {
           email: username,
           password,
           options: {
-            data: { role },
+            data: { role, name, age, gender, boat_type: boatType },
           },
         });
         authError = error;
@@ -108,6 +115,65 @@ export const Login: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          {isSignUp && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Age</label>
+                  <input
+                    type="number"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    placeholder="35"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Gender</label>
+                  <select
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 bg-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Boat Type</label>
+                <select
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 bg-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  value={boatType}
+                  onChange={(e) => setBoatType(e.target.value)}
+                >
+                  <option value="">Select a boat type...</option>
+                  <option value="canoe">Canoe / Kayak</option>
+                  <option value="skiff">Skiff</option>
+                  <option value="trawler">Trawler</option>
+                  <option value="frp">FRP (Fiberglass)</option>
+                  <option value="commercial">Commercial Vessel</option>
+                  <option value="research">Research Vessel</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+            </>
+          )}
           
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="role">

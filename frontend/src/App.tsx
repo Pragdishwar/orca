@@ -6,6 +6,7 @@ import OfflineCompileTab from './pages/OfflineCompileTab';
 import TrustTab from './pages/TrustTab';
 import { useOrcaStore } from './store/useOrcaStore';
 import { Login } from './components/auth/Login';
+import { Profile } from './components/profile/Profile';
 
 function App() {
   const activeTab = useOrcaStore(state => state.activeTab);
@@ -37,6 +38,7 @@ function App() {
           {activeTab === 'validation' && <ValidationTab />}
           {activeTab === 'offline_compile' && <OfflineCompileTab />}
           {activeTab === 'trust' && <TrustTab />}
+          {activeTab === 'profile' && <Profile />}
         </>
       )}
     </AppShell>

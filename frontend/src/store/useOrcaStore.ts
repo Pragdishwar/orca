@@ -5,7 +5,7 @@ import {
 } from '../api/client';
 
 export type TabId =
-  | 'platform' | 'alerts' | 'validation' | 'offline_compile' | 'trust';
+  | 'platform' | 'alerts' | 'validation' | 'offline_compile' | 'trust' | 'profile';
 
 export interface ChatMessage {
   id: string;
@@ -61,7 +61,14 @@ interface OrcaState {
   submitQuery: (text: string, opts?: { forceFailure?: boolean }) => Promise<void>;
   clearContextField: (field: string) => void;
   
-  user: { username: string, role: string } | null;
+  user: { 
+    username: string; 
+    role: string;
+    name?: string;
+    age?: string;
+    gender?: string;
+    boatType?: string;
+  } | null;
   token: string | null;
   initAuth: () => void;
   login: (username: string, token: string, role: string) => void;
@@ -115,14 +122,37 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
     import('../api/supabase').then(({ supabase }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-          const role = session.user.user_metadata?.role || (session.user.email?.includes('admin') ? 'admin' : 'fisherman');
-          set({ user: { username: session.user.email || '', role }, token: session.access_token });
+          const meta = session.user.user_metadata || {};
+          const role = meta.role || (session.user.email?.includes('admin') ? 'admin' : 'fisherman');
+          set({ 
+            user: { 
+              username: session.user.email || '', 
+              role,
+              name: meta.name,
+              age: meta.age,
+              gender: meta.gender,
+              boatType: meta.boat_type
+            }, 
+            token: session.access_token 
+          });
         }
       });
       supabase.auth.onAuthStateChange((_event, session) => {
         if (session) {
-          const role = session.user.user_metadata?.role || (session.user.email?.includes('admin') ? 'admin' : 'fisherman');
-          set({ user: { username: session.user.email || '', role }, token: session.access_token, activeTab: 'platform' });
+          const meta = session.user.user_metadata || {};
+          const role = meta.role || (session.user.email?.includes('admin') ? 'admin' : 'fisherman');
+          set({ 
+            user: { 
+              username: session.user.email || '', 
+              role,
+              name: meta.name,
+              age: meta.age,
+              gender: meta.gender,
+              boatType: meta.boat_type
+            }, 
+            token: session.access_token, 
+            activeTab: 'platform' 
+          });
         } else {
           set({ user: null, token: null });
         }
