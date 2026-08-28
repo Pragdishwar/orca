@@ -91,10 +91,11 @@ class DatasetDiscoveryAgent:
                 failed.append(src.provider)
                 # Only ever a downgrade: a source is never promoted to
                 # CONNECTED by a failed probe.
-                src.access_status = "SUBSTITUTED"
-                self.session.add(src)
-                logger.warning("Tier %s source %s did not connect for '%s'; falling through.",
-                               src.priority_tier, src.provider, var)
+                if src.access_status != "SUBSTITUTED":
+                    logger.warning("Tier %s source %s did not connect for '%s'; falling through.",
+                                   src.priority_tier, src.provider, var)
+                    src.access_status = "SUBSTITUTED"
+                    self.session.add(src)
 
             if failed:
                 fallback_occurred = True
