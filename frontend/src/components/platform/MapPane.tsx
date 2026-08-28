@@ -144,10 +144,9 @@ export default function MapPane() {
       style: BASEMAP_STYLE,
       center: [76.786, 8.636],
       zoom: 10,
-      // The prototype covers one inlet and its grounds. Letting the view drift
-      // to the Maldives is not a feature - clamp it to the Kerala coast.
-      maxBounds: [[75.4, 7.0], [78.4, 9.6]],
-      minZoom: 6.5,
+      // Expanded to include the whole India map
+      maxBounds: [[68.0, 6.5], [97.5, 37.5]],
+      minZoom: 3.5,
       maxZoom: 16,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
