@@ -15,7 +15,7 @@ from backend.app.core.seed_data import BOATS, NAMED_GROUNDS, ZONES
 from backend.app.db.session import Base, async_session, engine
 from backend.app.models import (  # noqa: F401 - imported so metadata is populated
     Advisory, Alert, Boat, Ground, HullThreshold, Incident, OfficialAdvisory,
-    Query, Session, SourceRegistry, Trace, Zone,
+    Query, Session, SourceRegistry, Trace, Zone, User
 )
 
 logger = logging.getLogger(__name__)
@@ -78,6 +78,12 @@ async def seed() -> None:
             for row in ZONES:
                 session.add(Zone(**row))
             logger.info("Seeded geofence zones (D-05).")
+
+        if await _count(session, User) == 0:
+            import uuid
+            session.add(User(id=str(uuid.uuid4()), username="admin", hashed_password="password", role="admin"))
+            session.add(User(id=str(uuid.uuid4()), username="user", hashed_password="password", role="user"))
+            logger.info("Seeded initial users.")
 
         await session.commit()
 

@@ -60,6 +60,11 @@ interface OrcaState {
   refreshAlerts: () => Promise<void>;
   submitQuery: (text: string, opts?: { forceFailure?: boolean }) => Promise<void>;
   clearContextField: (field: string) => void;
+  
+  user: { username: string, role: string } | null;
+  token: string | null;
+  login: (username: string, token: string, role: string) => void;
+  logout: () => void;
 }
 
 const errText = (e: unknown) =>
@@ -102,6 +107,19 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
   setBoatModalOpen: (isBoatModalOpen) => set({ isBoatModalOpen }),
   setActiveBoat: (activeBoat) => set({ activeBoat }),
   setUseMockChat: (useMockChat) => set({ useMockChat }),
+
+  user: localStorage.getItem('orca_user') ? JSON.parse(localStorage.getItem('orca_user')!) : null,
+  token: localStorage.getItem('orca_token'),
+  login: (username, token, role) => {
+    localStorage.setItem('orca_token', token);
+    localStorage.setItem('orca_user', JSON.stringify({ username, role }));
+    set({ user: { username, role }, token, activeTab: 'platform' });
+  },
+  logout: () => {
+    localStorage.removeItem('orca_token');
+    localStorage.removeItem('orca_user');
+    set({ user: null, token: null });
+  },
 
   boot: async () => {
     try {

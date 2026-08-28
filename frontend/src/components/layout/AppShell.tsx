@@ -1,18 +1,18 @@
 import React, { useEffect } from 'react';
 import {
   Anchor, Bell, Database, DownloadCloud, Radio, Server, Shield, ShieldAlert,
-  ShieldCheck, Ship, TriangleAlert,
+  ShieldCheck, Ship, TriangleAlert, LogOut
 } from 'lucide-react';
 import { useOrcaStore, TabId } from '../../store/useOrcaStore';
 import BoatRegistrationModal from '../modals/BoatRegistrationModal';
 import { ProvenanceBadge } from '../ui/Primitives';
 
-const TABS: { id: TabId; label: string; Icon: React.ElementType }[] = [
-  { id: 'platform', label: 'Platform', Icon: Anchor },
-  { id: 'alerts', label: 'Alerts', Icon: Bell },
-  { id: 'validation', label: 'Validation', Icon: ShieldAlert },
-  { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud },
-  { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck },
+export const TABS: { id: TabId; label: string; Icon: React.ElementType; roles: string[] }[] = [
+  { id: 'platform', label: 'Platform', Icon: Anchor, roles: ['admin', 'user'] },
+  { id: 'alerts', label: 'Alerts', Icon: Bell, roles: ['admin', 'user'] },
+  { id: 'validation', label: 'Validation', Icon: ShieldAlert, roles: ['admin'] },
+  { id: 'offline_compile', label: 'Offline Compile', Icon: DownloadCloud, roles: ['admin'] },
+  { id: 'trust', label: 'Trust & Threshold', Icon: ShieldCheck, roles: ['admin'] },
 ];
 
 /** Pipeline chip: fresh / stale / halted / failed, per R-2 bands. */
@@ -114,7 +114,7 @@ function AdvisoryStrip() {
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const {
     activeBoat, activeTab, language, alertSummary, boot, refreshHealth,
-    setActiveTab, setBoatModalOpen, bootError,
+    setActiveTab, setBoatModalOpen, bootError, user, logout
   } = useOrcaStore();
 
   useEffect(() => {
@@ -166,6 +166,19 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           >
             {unreleased > 0 ? `${unreleased} pending` : 'No alerts'}
           </Chip>
+          
+          <div className="ml-2 flex items-center gap-2 border-l border-slate-700 pl-4">
+            <span className="text-xs font-semibold text-slate-300">
+              {user?.username} ({user?.role})
+            </span>
+            <button
+              onClick={logout}
+              className="flex items-center gap-1 rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -186,7 +199,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           px-2 py-1.5 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]"
       >
         <div className="mx-auto flex max-w-3xl justify-between">
-          {TABS.map(({ id, label, Icon }) => {
+          {TABS.filter(tab => tab.roles.includes(user?.role || '')).map(({ id, label, Icon }) => {
             const on = activeTab === id;
             return (
               <button

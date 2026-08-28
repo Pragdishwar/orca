@@ -13,10 +13,11 @@ from .sentinel import router as sentinel_router
 from .session import router as session_router
 from .trace import router as trace_router
 from .validation import router as validation_router
+from .auth import router as auth_router
 
 __all__ = [
     "advisory_router", "alerts_router", "boats_router", "coverage_router",
     "demo_router", "geospatial_router", "health_router", "map_router",
     "personas_router", "query_router", "registry_router", "sentinel_router",
-    "session_router", "trace_router", "validation_router",
+    "session_router", "trace_router", "validation_router", "auth_router",
 ]
