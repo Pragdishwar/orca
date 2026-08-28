@@ -12,6 +12,8 @@ export const Login: React.FC = () => {
   
   const login = useOrcaStore(state => state.login);
 
+  const [isSignUp, setIsSignUp] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -19,23 +21,39 @@ export const Login: React.FC = () => {
     
     try {
       const { supabase } = await import('../../api/supabase');
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: username, // assuming username is email for Supabase
-        password,
-      });
+      let authError;
+      
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email: username,
+          password,
+          options: {
+            data: { role },
+          },
+        });
+        authError = error;
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: username,
+          password,
+        });
+        authError = error;
+        
+        if (!error) {
+          // Update the user's role metadata to match their selection
+          await supabase.auth.updateUser({
+            data: { role }
+          });
+        }
+      }
       
       if (authError) {
         throw new Error(authError.message);
       }
       
-      // Update the user's role metadata to match their selection
-      await supabase.auth.updateUser({
-        data: { role }
-      });
-      
       // State update is handled automatically by onAuthStateChange in the store
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(err.message || (isSignUp ? 'Sign up failed' : 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -48,7 +66,9 @@ export const Login: React.FC = () => {
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 shadow-md">
             <Anchor className="h-8 w-8 text-sky-400" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sign in to ORCA</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            {isSignUp ? 'Create an ORCA account' : 'Sign in to ORCA'}
+          </h1>
           <p className="mt-2 text-sm text-slate-500">Advisory Platform PS26176</p>
         </div>
         
@@ -91,7 +111,7 @@ export const Login: React.FC = () => {
           
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="role">
-              Sign in as
+              {isSignUp ? 'I am a...' : 'Sign in as'}
             </label>
             <select
               id="role"
@@ -110,17 +130,26 @@ export const Login: React.FC = () => {
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-70 transition-colors"
           >
-            {loading ? 'Signing in...' : (
+            {loading ? (isSignUp ? 'Signing up...' : 'Signing in...') : (
               <>
                 <LogIn className="h-4 w-4" />
-                Sign In
+                {isSignUp ? 'Sign Up' : 'Sign In'}
               </>
             )}
           </button>
         </form>
         
-        <div className="mt-8 text-center text-xs text-slate-400">
-          Please contact an administrator for an account.
+        <div className="mt-6 text-center text-sm text-slate-600">
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError('');
+            }}
+            className="font-medium text-sky-600 hover:text-sky-500 focus:outline-none focus:underline"
+          >
+            {isSignUp ? 'Sign in instead' : 'Sign up now'}
+          </button>
         </div>
       </div>
     </div>
