@@ -231,6 +231,7 @@ Computed Conditions:
 - Explanation: {adv.get('explanation')}
 
 Formulate a concise, clear answer addressing the user's question, using the computed conditions above.
+CRITICAL: Do not include ANY numbers (including percentages or counts like 100%, 1, 2) in your response that are not explicitly provided in the Computed Conditions above. The safety guard will reject your response if it contains unauthorized numbers.
 Ensure you strictly respond in JSON format with two keys:
 1. "explanation_text": Your detailed but concise response. Do not repeat the prompt.
 2. "verdict_token": The exact verdict token ("SAFE", "MARGINAL", or "DO_NOT_CROSS").
@@ -244,13 +245,23 @@ Ensure you strictly respond in JSON format with two keys:
                     json={
                         "model": "openai/gpt-oss-20b",
                         "messages": [{"role": "system", "content": prompt}],
-                        "response_format": {"type": "json_object"}
+                        "response_format": {"type": "json_object"},
+                        "reasoning_format": "hidden"
                     },
-                    timeout=10.0
+                    timeout=15.0
                 )
                 if resp.status_code == 200:
                     data = resp.json()
                     content_str = data["choices"][0]["message"]["content"]
+                    # Clean up potential markdown formatting
+                    content_str = content_str.strip()
+                    if content_str.startswith("```json"):
+                        content_str = content_str[7:]
+                    if content_str.startswith("```"):
+                        content_str = content_str[3:]
+                    if content_str.endswith("```"):
+                        content_str = content_str[:-3]
+                    content_str = content_str.strip()
                     content = json.loads(content_str)
                     text = content.get("explanation_text", text)
                     token = content.get("verdict_token", token)
