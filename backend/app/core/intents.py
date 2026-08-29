@@ -120,12 +120,53 @@ def route_advisory(ground_id: str, cruise_knots: float) -> Dict[str, Any]:
             "status": "MOCKUP"}
 
 
+def marine_conditions(slots: Dict[str, Any]) -> Dict[str, Any]:
+    from backend.app.core.dataset import row_at, INLET
+    from datetime import datetime, timezone
+    
+    user_lat = slots.get("user_lat")
+    user_lon = slots.get("user_lon")
+    lat = user_lat if user_lat is not None else INLET["lat"]
+    lon = user_lon if user_lon is not None else INLET["lon"]
+    loc_name = "your current location" if user_lat is not None else INLET["name"]
+    
+    target_str = slots.get("date")
+    target = datetime.fromisoformat(target_str).replace(tzinfo=timezone.utc) if target_str else datetime.now(timezone.utc)
+    
+    # We just fetch the row for the requested departure hour
+    hour = slots.get("departure_hour", 6)
+    target_dt = target.replace(hour=hour, minute=0, second=0, microsecond=0)
+    
+    row = row_at(target_dt, lat, lon)
+    if not row:
+        return {"kind": "marine_conditions", "answer": "I could not retrieve the weather forecast for that time.", "points": []}
+    
+    answer = f"Here are the marine conditions near {loc_name} at {target_dt.strftime('%A %H:%00')}: "
+    answer += f"Wave height is {row['hs_m']} m with a {row['tp_s']} s period. "
+    answer += f"Wind is blowing at {row['wind_ms']} m/s. "
+    answer += f"The tide is currently in the {row['tide_stage']} stage. "
+    
+    if row['lightning_flag']:
+        answer += "Warning: High likelihood of lightning strikes. "
+    if row['cyclone_flag']:
+        answer += "Warning: Cyclone alert is active in this region! "
+        
+    return {
+        "kind": "marine_conditions",
+        "answer": answer,
+        "points": [],
+        "ground": loc_name,
+        "method": "Open-Meteo live API."
+    }
+
 def answer_for_intent(intent: str, slots: Dict[str, Any],
                       cruise_knots: float) -> Optional[Dict[str, Any]]:
     """Returns None for crossing_safety, which the advisory engine handles."""
     ground = slots.get("ground_id") or DEFAULT_GROUND
     user_lat = slots.get("user_lat")
     user_lon = slots.get("user_lon")
+    if intent == "marine_conditions":
+        return marine_conditions(slots)
     if intent == "nearest_pfz":
         return nearest_pfz(ground, user_lat=user_lat, user_lon=user_lon)
     if intent == "geofence_check":

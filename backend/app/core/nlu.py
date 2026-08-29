@@ -19,6 +19,7 @@ from backend.app.core import config_store
 
 INTENT_LAYERS = {
     "crossing_safety": ["inlet", "hazard_corridor"],
+    "marine_conditions": ["inlet"],
     "nearest_pfz": ["inlet", "pfz"],
     "geofence_check": ["inlet", "geofences"],
     "route_advisory": ["inlet", "route", "hazard_corridor"],
@@ -28,13 +29,13 @@ INTENT_LAYERS = {
     "location": [],
 }
 
-_MALAYALAM = re.compile(r"[ഀ-ൿ]")
-_TAMIL = re.compile(r"[஀-௿]")
+_MALAYALAM = re.compile(r"[\u0D00-\u0D7F]")
+_TAMIL = re.compile(r"[\u0B80-\u0BFF]")
 
 # Malayalam / Tamil keyword stems, so a query in those scripts still routes to
 # the right intent even though the response is composed in English.
-_ML_SAFE = ("സുരക്ഷ", "പോകാമോ", "കടല", "തിരമാല")
-_TA_SAFE = ("பாதுகாப்", "கடல", "அலை", "போகலாம")
+_ML_SAFE = ("സുരക്ഷിത", "പോകാമോ", "സാധിക്കുമ", "അപകടമുണ")
+_TA_SAFE = ("பாதுகாப", "போகலாம", "முடியும", "ஆபத")
 
 
 def detect_language(text: str) -> str:
@@ -47,10 +48,12 @@ def detect_language(text: str) -> str:
 
 
 def _detect_intent(low: str, raw: str) -> str:
-    if any(w in low.split() for w in ("hi", "hello", "hey", "greetings", "namaste", "vanakkam", "namaskaram", "ഹലോ", "നമസ്കാരം", "வணக்கம்")):
+    if any(w in low.split() for w in ("hi", "hello", "hey", "greetings", "namaste", "vanakkam", "namaskaram", "വണക", "നമസ", "வணக")):
         return "greeting"
     if any(w in low for w in ("where am i", "my location", "where are we", "gps")):
         return "location"
+    if any(w in low for w in ("weather", "tide", "lightning", "cyclone", "conditions", "sea state", "forecast")):
+        return "marine_conditions"
     if any(k in raw for k in _ML_SAFE) or any(k in raw for k in _TA_SAFE):
         return "crossing_safety"
     if any(w in low for w in ("pfz", "fishing zone", "fish zone", "where to fish", "shoal")):
