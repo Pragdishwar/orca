@@ -30,7 +30,7 @@ RECORD_END = RECORD_START + timedelta(days=RECORD_YEARS * 365 - 1)
 VERDICT_ORDER = {"SAFE": 0, "MARGINAL": 1, "DO_NOT_CROSS": 2}
 
 
-def resolve_record_datetime(dt: datetime) -> tuple[datetime, bool]:
+def resolve_record_datetime(dt: datetime) -> Tuple[datetime, bool]:
     """Ensure the target datetime is UTC."""
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
