@@ -119,9 +119,13 @@ def build_advisory(
         hull_threshold=band,
     )
 
+    is_custom = abs(lat - INLET["lat"]) > 0.05 or abs(lon - INLET["lon"]) > 0.05
+    loc_name = "Coastal Waters (GPS)" if is_custom else INLET["name"]
+    loc_id = "gps" if is_custom else INLET["inlet_id"]
+
     payload: Dict[str, Any] = {
-        "inlet_id": INLET["inlet_id"],
-        "inlet_name": INLET["name"],
+        "inlet_id": loc_id,
+        "inlet_name": loc_name,
         "hull_class": band.hull_class,
         "hull_label": band.label,
         "date": mapped.date().isoformat(),
@@ -135,7 +139,7 @@ def build_advisory(
         "swell_hs_m": peak_row["swell_hs_m"],
         "wind_ms": peak_row["wind_ms"],
         "tide_stage": peak_row["tide_stage"],
-        "channel_bearing_deg": INLET["channel_bearing_deg"],
+        "channel_bearing_deg": INLET["channel_bearing_deg"] if not is_custom else 270.0,
         "lightning_flag": peak_row["lightning_flag"],
         "cyclone_flag": peak_row["cyclone_flag"],
         "peak_hour": peak["hour"],

@@ -104,7 +104,7 @@ def discovery_node(state: AgentState) -> AgentState:
 def weather_node(state: AgentState) -> AgentState:
     t0 = time.perf_counter()
     adv = state["computed"]
-    _step(state, "Weather", {"inlet": INLET["name"], "date": adv["date"]},
+    _step(state, "Weather", {"location": adv["inlet_name"], "date": adv["date"]},
           {"wind_ms": adv["wind_ms"], "lightning_flag": adv["lightning_flag"],
            "cyclone_flag": adv["cyclone_flag"]}, t0)
     return state
@@ -113,7 +113,7 @@ def weather_node(state: AgentState) -> AgentState:
 def ocean_node(state: AgentState) -> AgentState:
     t0 = time.perf_counter()
     adv = state["computed"]
-    _step(state, "Ocean", {"inlet": INLET["name"], "date": adv["date"]},
+    _step(state, "Ocean", {"location": adv["inlet_name"], "date": adv["date"]},
           {"hs_m": adv["hs_m"], "tp_s": adv["tp_s"], "dir_deg": adv["dir_deg"],
            "swell_hs_m": adv["swell_hs_m"], "tide_stage": adv["tide_stage"]}, t0)
     return state
@@ -123,9 +123,9 @@ def geospatial_node(state: AgentState) -> AgentState:
     t0 = time.perf_counter()
     adv = state["computed"]
     _step(state, "Geospatial",
-          {"inlet": INLET["name"], "channel_bearing_deg": INLET["channel_bearing_deg"]},
-          {"wave_channel_offset_deg": round(abs(adv["dir_deg"] - INLET["channel_bearing_deg"]), 1),
-           "mouth_width_m": INLET["mouth_width_m"]}, t0)
+          {"location": adv["inlet_name"], "channel_bearing_deg": adv.get("channel_bearing_deg", 270.0)},
+          {"wave_channel_offset_deg": round(abs(adv["dir_deg"] - adv.get("channel_bearing_deg", 270.0)), 1),
+           "mouth_width_m": 110.0}, t0)
     return state
 
 
