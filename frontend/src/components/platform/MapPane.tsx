@@ -242,6 +242,7 @@ export default function MapPane() {
     const map = mapRef.current;
     if (!map) return;
     const coords: [number, number][] = [];
+    const store = useOrcaStore.getState();
     
     // Frame the layers relevant to the active query, or defaults if none
     const relevantLayers = store.active 
@@ -256,7 +257,6 @@ export default function MapPane() {
     
     // Only include user location if the query explicitly requested it, or if nothing else is visible.
     // Otherwise, framing a user in Bangalore + the inlet in Kerala zooms out the map to show all of South India!
-    const store = useOrcaStore.getState();
     if (store.context.user_lat != null && store.context.user_lon != null) {
       if (store.active?.intent === 'location' || !coords.length) {
         coords.push([store.context.user_lon, store.context.user_lat]);
