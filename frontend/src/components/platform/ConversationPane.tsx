@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Clock, MapPin, Send, Ship, TriangleAlert, X,
+  Clock, MapPin, Send, Ship, TriangleAlert, X, Mic
 } from 'lucide-react';
 import { useOrcaStore } from '../../store/useOrcaStore';
 import { VerdictBadge } from '../ui/Primitives';
@@ -150,11 +150,41 @@ export default function ConversationPane() {
     useMockChat, setUseMockChat
   } = useOrcaStore();
   const [text, setText] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory.length, isQuerying]);
+
+  useEffect(() => {
+    // @ts-ignore
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setText(transcript);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
 
   const activePersona = personas.find((p) => p.persona_id === persona);
   const suggestions = activePersona?.suggested_queries ?? [];
@@ -271,6 +301,17 @@ export default function ConversationPane() {
               text-slate-800 outline-none"
           />
           <button
+            onClick={toggleListening}
+            aria-label={isListening ? "Stop listening" : "Start listening"}
+            className={`rounded-full p-2.5 shadow-sm transition-colors ${
+              isListening 
+                ? 'bg-red-500 text-white hover:bg-red-600 animate-pulse' 
+                : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+            }`}
+          >
+            <Mic className="h-4 w-4" aria-hidden />
+          </button>
+          <button
             onClick={() => send()}
             disabled={isQuerying || !text.trim()}
             aria-label="Send"
@@ -281,8 +322,7 @@ export default function ConversationPane() {
           </button>
         </div>
         <p className="mt-1.5 text-[10px] text-slate-400">
-          Voice input is not built. Malayalam and Tamil are detected by script, but
-          answers are composed in English — see the Coverage tab.
+          Answers are composed in English by default but will be automatically translated to Malayalam or Tamil if you ask in those languages.
         </p>
       </div>
     </div>
