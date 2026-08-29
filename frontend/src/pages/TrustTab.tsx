@@ -69,6 +69,8 @@ export default function TrustTab() {
     await submitQuery('Is it safe to cross tomorrow?', { forceFailure: true });
   };
 
+  const user = useOrcaStore((s) => s.user);
+
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <Panel
@@ -121,7 +123,11 @@ export default function TrustTab() {
       </Panel>
 
       <Panel title="Human release" subtitle="R-4 · nothing publishes without a name on it">
-        {!active ? (
+        {user?.role !== 'admin' ? (
+          <p className="text-sm text-slate-500">
+            You do not have permission to release advisories. This action is restricted to authorised officers.
+          </p>
+        ) : !active ? (
           <p className="text-sm text-slate-500">
             No active advisory. Ask a question on the Platform tab first.
           </p>
