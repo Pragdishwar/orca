@@ -207,22 +207,6 @@ export default function MapPane() {
     });
   }, [active]);
 
-  // FR-27: persona defaults. `inlet` and the coverage line always stay on, so
-  // the map never ends up with nothing drawn on it.
-  useEffect(() => {
-    const p = personas.find((x) => x.persona_id === persona);
-    if (!p) return;
-    setVisible((v) => {
-      const next = { ...v };
-      for (const key of Object.keys(next) as LayerKey[]) {
-        next[key] = p.default_layers.includes(key);
-      }
-      next.inlet = true;
-      next.coverage_line = true;
-      return next;
-    });
-  }, [persona, personas]);
-
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
     const map = new maplibregl.Map({
