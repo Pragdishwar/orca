@@ -111,7 +111,12 @@ export default function MapPane() {
   const personas = useOrcaStore((s) => s.personas);
   const persona = useOrcaStore((s) => s.persona);
   const context = useOrcaStore((s) => s.context);
+  const initGpsWatcher = useOrcaStore((s) => s.initGpsWatcher);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+
+  useEffect(() => {
+    initGpsWatcher();
+  }, [initGpsWatcher]);
 
   useEffect(() => {
     if (!mapRef.current || !ready) return;
@@ -129,12 +134,8 @@ export default function MapPane() {
           .setLngLat([context.user_lon, context.user_lat])
           .setPopup(new maplibregl.Popup({ offset: 10 }).setText('You are here'))
           .addTo(map);
-        
-        // Pan to the user's location
-        map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11, duration: 1000 });
       } else {
         userMarkerRef.current.setLngLat([context.user_lon, context.user_lat]);
-        map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11, duration: 1000 });
       }
     }
   }, [context.user_lat, context.user_lon, ready]);
@@ -442,7 +443,12 @@ export default function MapPane() {
       // Guarantee ORCA's layers sit above the basemap. addLayer() appends, but
       // any re-add or style event can leave one underneath the raster, where a
       // 0.75-opacity tile over water hides it completely.
-      for (const id of allIds) {
+      // We must move fills first, then lines, then circles, so they stack correctly.
+      const fills = allIds.filter(id => id.includes('-fill'));
+      const lines = allIds.filter(id => id.includes('-line') || id.includes('-casing'));
+      const points = allIds.filter(id => id.includes('-point') || id.includes('-circle'));
+      
+      for (const id of [...fills, ...lines, ...points]) {
         if (map.getLayer(id)) {
           try { map.moveLayer(id); } catch { /* already topmost */ }
         }

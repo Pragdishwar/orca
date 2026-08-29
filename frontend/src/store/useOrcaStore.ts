@@ -60,7 +60,8 @@ interface OrcaState {
   refreshAlerts: () => Promise<void>;
   submitQuery: (text: string, opts?: { forceFailure?: boolean }) => Promise<void>;
   clearContextField: (field: string) => void;
-  
+  setLocation: (lat: number, lon: number) => void;
+  initGpsWatcher: () => void;
   user: { 
     username: string; 
     role: string;
@@ -217,6 +218,25 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
 
   clearContextField: (field) =>
     set((s) => ({ context: { ...s.context, [field]: '' } })),
+
+  setLocation: (lat, lon) => set((s) => ({
+    context: { ...s.context, user_lat: lat, user_lon: lon },
+  })),
+
+  initGpsWatcher: () => {
+    if ('geolocation' in navigator) {
+      // Check if permission is already granted so we don't prompt on boot unless they ask
+      navigator.permissions?.query({ name: 'geolocation' }).then((status) => {
+        if (status.state === 'granted') {
+          navigator.geolocation.watchPosition(
+            (pos) => get().setLocation(pos.coords.latitude, pos.coords.longitude),
+            () => {},
+            { enableHighAccuracy: false, maximumAge: 10000 }
+          );
+        }
+      }).catch(() => {});
+    }
+  },
 
   submitQuery: async (text, opts) => {
     const { sessionId, persona, chatHistory, activeBoat } = get();
