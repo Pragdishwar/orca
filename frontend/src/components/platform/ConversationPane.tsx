@@ -53,16 +53,20 @@ function ContextChips() {
 
 function AnswerCard({ res }: { res: QueryResponse }) {
   const rejected = res.guard.result === 'REJECT';
+  const isAlt = !!res.intent_result;
+  
   return (
     <div className={`w-full rounded-xl border bg-white p-4 shadow-sm ${rejected
       ? 'border-red-300' : 'border-slate-200'}`}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b
-        border-slate-200 pb-3">
-        <VerdictBadge verdict={res.verdict} />
-        <span className="font-mono text-[10px] text-slate-500">
-          {res.hull_label} · {res.date}
-        </span>
-      </div>
+      
+      {!isAlt && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+          <VerdictBadge verdict={res.verdict} />
+          <span className="font-mono text-[10px] text-slate-500">
+            {res.hull_label} · {res.date}
+          </span>
+        </div>
+      )}
 
       {rejected && (
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-red-300
@@ -105,23 +109,40 @@ function AnswerCard({ res }: { res: QueryResponse }) {
         </ul>
       )}
 
-      {res.intent_result && (
-        <p className="mb-3 rounded bg-slate-50 px-2 py-1 text-[11px] text-slate-500">
-          Crossing verdict for this date is shown below as context — it was computed and
-          guarded even though you asked a different question.
-        </p>
+      {isAlt ? (
+        <details className="mt-4 border-t border-slate-200 pt-3 text-[11px] text-slate-500">
+          <summary className="cursor-pointer mb-2 font-medium">
+            Show background crossing context (always computed)
+          </summary>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <VerdictBadge verdict={res.verdict} />
+            <span className="font-mono text-[10px] text-slate-500">
+              {res.hull_label} · {res.date}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <Cell label="Hazard index" value={res.index_value.toFixed(3)} />
+            <Cell
+              label="Return window"
+              value={res.return_window
+                ? `${res.return_window.start_label}–${res.return_window.end_label}`
+                : 'none'}
+            />
+            <Cell label="Turn back by" value={res.turn_back_time ?? 'n/a'} />
+          </div>
+        </details>
+      ) : (
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <Cell label="Hazard index" value={res.index_value.toFixed(3)} />
+          <Cell
+            label="Return window"
+            value={res.return_window
+              ? `${res.return_window.start_label}–${res.return_window.end_label}`
+              : 'none'}
+          />
+          <Cell label="Turn back by" value={res.turn_back_time ?? 'n/a'} />
+        </div>
       )}
-
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <Cell label="Hazard index" value={res.index_value.toFixed(3)} />
-        <Cell
-          label="Return window"
-          value={res.return_window
-            ? `${res.return_window.start_label}–${res.return_window.end_label}`
-            : 'none'}
-        />
-        <Cell label="Turn back by" value={res.turn_back_time ?? 'n/a'} />
-      </div>
 
       {res.date_mapped_from_request && (
         <p className="mt-3 text-[11px] italic text-slate-500">
