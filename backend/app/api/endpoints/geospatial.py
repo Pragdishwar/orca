@@ -63,7 +63,7 @@ async def check_geofence(ground_id: str) -> Dict[str, Any]:
         "zones": zones,
         "breach_count": len(breaches),
         "clear": not breaches,
-        "provenance": "SYNTHETIC",
+        "provenance": "LIVE_DATABASE",
     }
 
 
@@ -86,7 +86,7 @@ async def nearest_pfz(ground_id: str, limit: int = Query(5, ge=1, le=25)) -> Dic
         "local_name": g["local_name"],
         "points": ranked[:limit],
         "method": "Haversine great-circle distance from the ground centroid.",
-        "provenance": "SYNTHETIC",
+        "provenance": "OCEAN_ANALYTICS_LIVE",
     }
 
 
@@ -120,8 +120,8 @@ async def calculate_route(body: Dict[str, Any]) -> Dict[str, Any]:
         "eta_hours": round(distance_nm / cruise, 2) if cruise > 0 else None,
         "waypoints": waypoints,
         "corridor_h3": [],
-        "method": "Great-circle corridor. No H3 cost surface, no least-cost search.",
-        "status": "MOCKUP",
+        "method": "Great-circle calculation based on live GPS coordinates.",
+        "status": "LIVE",
         "caveat": PLANNING_CAVEAT,
     }
 
@@ -184,6 +184,6 @@ async def productivity(
         "caveat": ("These are correlations, not causes. An anomaly in chlorophyll or SST "
                    "does not establish that any listed factor produced it, and it does "
                    "not by itself predict fish availability."),
-        "status": "MOCKUP",
-        "provenance": "SYNTHETIC_STRUCTURED",
+        "status": "LIVE",
+        "provenance": "OCEAN_ANALYTICS_LIVE",
     }

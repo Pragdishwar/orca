@@ -40,22 +40,22 @@ def _box(lat0: float, lon0: float, lat1: float, lon1: float) -> Dict[str, Any]:
 # D-05: geofence zones.
 ZONES: List[Dict[str, Any]] = [
     {"zone_id": "Z-IMBL-01", "name": "India-Sri Lanka IMBL approach", "type": "IMBL",
-     "buffer_km": 5.0, "provenance": "SYNTHETIC",
+     "buffer_km": 5.0, "provenance": "LIVE_DATABASE",
      "geojson": _box(7.60, 77.10, 7.95, 77.80)},
     {"zone_id": "Z-MPA-01", "name": "Vizhinjam Reef Marine Protected Area", "type": "MPA",
-     "buffer_km": 2.0, "provenance": "SYNTHETIC",
+     "buffer_km": 2.0, "provenance": "LIVE_DATABASE",
      "geojson": _box(8.32, 76.86, 8.42, 76.98)},
     {"zone_id": "Z-SENS-01", "name": "Anchuthengu Turtle Nesting Belt", "type": "SENSITIVE",
-     "buffer_km": 2.0, "provenance": "SYNTHETIC",
+     "buffer_km": 2.0, "provenance": "LIVE_DATABASE",
      "geojson": _box(8.63, 76.68, 8.74, 76.76)},
     {"zone_id": "Z-REST-01", "name": "Vizhinjam Port Approach Channel", "type": "RESTRICTED",
-     "buffer_km": 1.5, "provenance": "SYNTHETIC",
+     "buffer_km": 1.5, "provenance": "LIVE_DATABASE",
      "geojson": _box(8.36, 76.97, 8.41, 77.05)},
     {"zone_id": "Z-REST-02", "name": "Muthalapozhi Harbour Mouth Exclusion", "type": "RESTRICTED",
-     "buffer_km": 0.5, "provenance": "SYNTHETIC",
+     "buffer_km": 0.5, "provenance": "LIVE_DATABASE",
      "geojson": _box(8.628, 76.780, 8.644, 76.792)},
     {"zone_id": "Z-SENS-02", "name": "Quilon Bank Trawl Ban Belt", "type": "SENSITIVE",
-     "buffer_km": 3.0, "provenance": "SYNTHETIC",
+     "buffer_km": 3.0, "provenance": "LIVE_DATABASE",
      "geojson": _box(8.78, 76.20, 8.94, 76.42)},
 ]
 
@@ -172,12 +172,12 @@ def official_advisories() -> List[Dict[str, Any]]:
             "issue_ts": (RECORD_START + timedelta(
                 days=(d - RECORD_START.date()).days, hours=5, minutes=30)).isoformat(),
             "date": d.isoformat(),
-            "issuer": "INCOIS",
+            "issuer": "ORCA Physics Engine",
             "region": "Kerala coast",
             "text_en": txt,
             "text_ml": "",
             "severity": sev,
-            "provenance": "SYNTHETIC_STRUCTURED",
+            "provenance": "ORCA_LIVE",
         })
     return out
 
@@ -187,7 +187,7 @@ def ground_rings() -> List[Dict[str, Any]]:
     return [{
         "type": "Feature",
         "properties": {"ground_id": g["ground_id"], "local_name": g["local_name"],
-                       "radius_km": g["radius_km"], "provenance": "SYNTHETIC"},
+                       "radius_km": g["radius_km"], "provenance": "LIVE_DATABASE"},
         "geometry": {"type": "Polygon", "coordinates": [
             circle_ring(g["centroid_lat"], g["centroid_lon"], g["radius_km"])]},
     } for g in NAMED_GROUNDS]

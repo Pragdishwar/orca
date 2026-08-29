@@ -20,11 +20,7 @@ INLET = {
 RECORD_START = datetime(2022, 1, 1, tzinfo=timezone.utc)
 RECORD_YEARS = 3
 
-def _tide_height(ts: datetime) -> float:
-    hours = (ts - RECORD_START).total_seconds() / 3600.0
-    m2 = 0.42 * math.sin(2 * math.pi * hours / 12.4206)
-    s2 = 0.14 * math.sin(2 * math.pi * hours / 12.0)
-    return 0.55 + m2 + s2
+
 
 @lru_cache(maxsize=16)
 def build_record(lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[Dict[str, Any]]:
@@ -36,7 +32,7 @@ def build_record(lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[D
     end_date = (now + timedelta(days=7)).strftime("%Y-%m-%d")
     start_date = "2022-01-01"
 
-    m_url = f'https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&hourly=wave_height,wave_period,wave_direction,wind_wave_height,swell_wave_height'
+    m_url = f'https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&hourly=wave_height,wave_period,wave_direction,wind_wave_height,swell_wave_height,sea_level_height_msl'
     w_url_archive = f'https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={yesterday_date}&hourly=wind_speed_10m,wind_direction_10m'
     w_url_forecast = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&past_days=1&forecast_days=7&hourly=wind_speed_10m,wind_direction_10m'
 
@@ -87,6 +83,7 @@ def build_record(lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[D
         dir_deg = m_hourly.get("wave_direction", [])[i]
         windsea_hs = m_hourly.get("wind_wave_height", [])[i]
         swell_hs = m_hourly.get("swell_wave_height", [])[i]
+        sea_level = m_hourly.get("sea_level_height_msl", [])[i]
         
         # Parse Open-Meteo Wind Data
         wind_tuple = wind_dict.get(ts_str)
@@ -103,11 +100,20 @@ def build_record(lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[D
         swell_hs = swell_hs if swell_hs is not None else hs
         wind_ms = (wind_ms * 1000 / 3600) if wind_ms is not None else 0.0 # open-meteo archive provides km/h, convert to m/s
         wind_dir = wind_dir if wind_dir is not None else 0.0
+        sea_level = sea_level if sea_level is not None else 0.0
 
         chop = 0.92 * chop + rng.gauss(0, 0.30)
         
-        height = _tide_height(ts)
-        rate = (_tide_height(ts + timedelta(minutes=30)) - _tide_height(ts - timedelta(minutes=30)))
+        height = sea_level + 0.55 # Offset to match original positive scale
+        
+        # Calculate real tide rate from MSL differences
+        if i > 0 and i < len(times) - 1:
+            prev_level = m_hourly.get("sea_level_height_msl", [])[i-1] or 0.0
+            next_level = m_hourly.get("sea_level_height_msl", [])[i+1] or 0.0
+            rate = next_level - prev_level
+        else:
+            rate = 0.0
+            
         if rate < -0.02: stage = "ebb"
         elif rate > 0.02: stage = "flood"
         else: stage = "slack"

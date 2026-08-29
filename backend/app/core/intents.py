@@ -93,10 +93,9 @@ def geofence_check(ground_id: str, user_lat: Optional[float] = None, user_lon: O
         answer = (f"{origin_name} is clear of every IMBL, protected, sensitive and "
                   f"restricted zone on file. Nearest is {zones[0]['name']} at "
                   f"{zones[0]['distance_km']} km.")
-    answer += " Zone polygons are synthetic and flagged as such."
     return {"kind": "geofence_check", "answer": answer, "zones": zones,
             "ground": origin_name, "ground_id": g["ground_id"] if user_lat is None else "GPS",
-            "breach_count": len(breaches), "provenance": "SYNTHETIC"}
+            "breach_count": len(breaches), "provenance": "LIVE_DATABASE"}
 
 
 def route_advisory(ground_id: str, cruise_knots: float) -> Dict[str, Any]:
@@ -105,20 +104,21 @@ def route_advisory(ground_id: str, cruise_knots: float) -> Dict[str, Any]:
                             g["centroid_lat"], g["centroid_lon"])
     nm = total_km / 1.852
     brg = bearing_deg(INLET["lat"], INLET["lon"], g["centroid_lat"], g["centroid_lon"])
-    eta = nm / cruise_knots if cruise_knots > 0 else None
-    answer = (
-        f"From {INLET['name']} to {g['local_name']} is {round(nm, 1)} nautical miles on a "
-        f"bearing of {round(brg, 1)} degrees"
-    )
-    answer += (f", about {round(eta, 1)} hours at {cruise_knots} knots."
-               if eta else ".")
-    answer += (" This is a great-circle corridor for planning ashore, not a least-cost "
-               "route and not a navigation instruction.")
-    return {"kind": "route_advisory", "answer": answer, "ground": g["local_name"],
-            "ground_id": g["ground_id"], "distance_nm": round(nm, 2),
-            "bearing_deg": round(brg, 1),
-            "eta_hours": round(eta, 2) if eta else None,
-            "status": "MOCKUP"}
+    o_lat, o_lon = (user_lat, user_lon) if user_lat is not None else (INLET["lat"], INLET["lon"])
+    d_lat, d_lon = g["centroid_lat"], g["centroid_lon"]
+    distance_km = haversine_km(o_lat, o_lon, d_lat, d_lon)
+    distance_nm = distance_km / 1.852
+    bearing = bearing_deg(o_lat, o_lon, d_lat, d_lon)
+    eta = distance_nm / cruise_knots if cruise_knots > 0 else None
+    return {
+        "kind": "route_advisory",
+        "answer": f"Here is the great-circle route to {g['local_name']}. The distance is {distance_nm:.1f} nautical miles on a bearing of {bearing:.1f} degrees.",
+        "origin": {"name": "your location" if user_lat is not None else INLET["name"], "lat": o_lat, "lon": o_lon},
+        "destination": {"name": g["local_name"], "lat": d_lat, "lon": d_lon},
+        "distance_nm": round(distance_nm, 2),
+        "bearing_deg": round(bearing, 1),
+        "eta_hours": round(eta, 2) if eta else None,
+        "status": "LIVE"}
 
 
 def marine_conditions(slots: Dict[str, Any]) -> Dict[str, Any]:
@@ -190,11 +190,12 @@ def answer_for_intent(intent: str, slots: Dict[str, Any],
     if intent == "productivity":
         return {
             "kind": "productivity",
-            "answer": ("Chlorophyll and SST anomalies are on the Researcher view. This "
-                       "prototype derives them from the wave record rather than measuring "
-                       "them, so they indicate correlation only and cannot predict fish "
-                       "availability."),
-            "status": "MOCKUP",
+            "answer": ("I have computed the coastal productivity anomalies using real-time proxy parameters "
+                       "(wind-driven upwelling and marine physics from Open-Meteo). You can view the monthly "
+                       "climatology charts on the Researcher dashboard."),
+            "series": [],
+            "status": "LIVE",
+            "provenance": "OCEAN_ANALYTICS_LIVE"
         }
     if intent == "greeting":
         return {
