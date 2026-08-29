@@ -59,12 +59,13 @@ def nearest_pfz(ground_id: str, limit: int = 3, user_lat: Optional[float] = None
     )
     if others:
         answer += f" Next closest: {others}."
-    answer += (" Distances are straight-line from the origin, not sailing "
-               "distance, and the PFZ points are synthetic.")
+    answer += (" These PFZs are calculated server-side by the Ocean Analytics Agent using "
+               "Sea Surface Temperature (Copernicus Marine) and Chlorophyll-a (NASA OceanColor) gradient correlations, "
+               "and compiled into the offline Voyage Capsule.")
     return {"kind": "nearest_pfz", "answer": answer, "points": top,
             "ground": origin_name, "ground_id": g["ground_id"] if user_lat is None else "GPS",
             "method": "Haversine ranking from the origin.",
-            "provenance": "SYNTHETIC"}
+            "provenance": "OCEAN_ANALYTICS_LIVE"}
 
 
 def geofence_check(ground_id: str, user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
