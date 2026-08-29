@@ -10,6 +10,8 @@ class QueryRequest(BaseModel):
     persona: Optional[str] = "fisherman"
     force_failure: bool = False
     stream: bool = False
+    user_lat: Optional[float] = None
+    user_lon: Optional[float] = None
 
 
 class QueryResponse(BaseModel):

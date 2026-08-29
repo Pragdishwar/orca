@@ -248,11 +248,11 @@ export const api = {
   health: () => get<Health>('/api/health'),
 
   query: (body: {
-    session_id: string; query_text: string; persona?: string; force_failure?: boolean; stream?: boolean;
+    session_id: string; query_text: string; persona?: string; force_failure?: boolean; stream?: boolean; user_lat?: number; user_lon?: number;
   }) => post<QueryResponse>('/api/query', body),
 
   queryStream: async function* (body: {
-    session_id: string; query_text: string; persona?: string; force_failure?: boolean; stream?: boolean;
+    session_id: string; query_text: string; persona?: string; force_failure?: boolean; stream?: boolean; user_lat?: number; user_lon?: number;
   }) {
     body.stream = true;
     const res = await fetch(API_URL + '/api/query', {

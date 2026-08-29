@@ -37,15 +37,16 @@ _TA_SAFE = ("பாதுகாப்", "கடல", "அலை", "போகல�
 
 
 def detect_language(text: str) -> str:
-    if _MALAYALAM.search(text):
+    low = text.lower()
+    if _MALAYALAM.search(text) or any(w in low.split() for w in ("namaskaram", "sugamano", "engane", "malayalam")):
         return "ml"
-    if _TAMIL.search(text):
+    if _TAMIL.search(text) or any(w in low.split() for w in ("vanakkam", "eppadi", "nandri", "tamil", "meen", "kadal")):
         return "ta"
     return "en"
 
 
 def _detect_intent(low: str, raw: str) -> str:
-    if any(w in low.split() for w in ("hi", "hello", "hey", "greetings", "namaste", "ഹലോ", "നമസ്കാരം", "வணக்கம்")):
+    if any(w in low.split() for w in ("hi", "hello", "hey", "greetings", "namaste", "vanakkam", "namaskaram", "ഹലോ", "നമസ്കാരം", "வணக்கம்")):
         return "greeting"
     if any(k in raw for k in _ML_SAFE) or any(k in raw for k in _TA_SAFE):
         return "crossing_safety"

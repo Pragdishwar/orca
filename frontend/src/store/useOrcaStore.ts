@@ -236,6 +236,18 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
       isQuerying: true,
     });
 
+    let user_lat: number | undefined;
+    let user_lon: number | undefined;
+    try {
+      if ('geolocation' in navigator) {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 2000, maximumAge: 60000 });
+        });
+        user_lat = pos.coords.latitude;
+        user_lon = pos.coords.longitude;
+      }
+    } catch (e) { /* ignore */ }
+
     try {
       const messageId = crypto.randomUUID();
       if (!get().useMockChat) {
@@ -244,6 +256,8 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
           query_text: withBoat,
           persona,
           force_failure: opts?.forceFailure ?? false,
+          user_lat,
+          user_lon,
         });
 
         set((s) => ({
@@ -288,6 +302,8 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
           query_text: withBoat,
           persona,
           force_failure: opts?.forceFailure ?? false,
+          user_lat,
+          user_lon,
         });
 
         let trace: TraceStep[] = [];

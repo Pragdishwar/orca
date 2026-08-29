@@ -27,49 +27,55 @@ def resolve_ground(ground_id: str) -> Dict[str, Any]:
     return NAMED_GROUNDS[0]
 
 
-def nearest_pfz(ground_id: str, limit: int = 3) -> Dict[str, Any]:
+def nearest_pfz(ground_id: str, limit: int = 3, user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
     g = resolve_ground(ground_id)
+    lat = user_lat if user_lat is not None else g["centroid_lat"]
+    lon = user_lon if user_lon is not None else g["centroid_lon"]
+    origin_name = "your current location" if user_lat is not None else g["local_name"]
+    
     ranked = []
     for p in pfz_points():
-        d = haversine_km(g["centroid_lat"], g["centroid_lon"], p["lat"], p["lon"])
+        d = haversine_km(lat, lon, p["lat"], p["lon"])
         ranked.append({
             "pfz_id": p["pfz_id"],
             "lat": p["lat"], "lon": p["lon"],
             "depth_m": p["depth_m"], "confidence": p["confidence"],
             "distance_km": round(d, 2),
-            "bearing_deg": round(bearing_deg(g["centroid_lat"], g["centroid_lon"],
-                                             p["lat"], p["lon"]), 1),
+            "bearing_deg": round(bearing_deg(lat, lon, p["lat"], p["lon"]), 1),
         })
     ranked.sort(key=lambda p: p["distance_km"])
     top = ranked[:limit]
 
     if not top:
         return {"kind": "nearest_pfz", "answer": "No PFZ advisory points are on file.",
-                "points": [], "ground": g["local_name"]}
+                "points": [], "ground": origin_name}
 
     first = top[0]
     others = ", ".join(f"{p['pfz_id']} at {p['distance_km']} km" for p in top[1:])
     answer = (
-        f"The nearest potential fishing zone to {g['local_name']} is {first['pfz_id']}, "
+        f"The nearest potential fishing zone to {origin_name} is {first['pfz_id']}, "
         f"{first['distance_km']} km away on a bearing of {first['bearing_deg']} degrees, "
         f"in {first['depth_m']} m of water."
     )
     if others:
         answer += f" Next closest: {others}."
-    answer += (" Distances are straight-line from the declared ground, not sailing "
+    answer += (" Distances are straight-line from the origin, not sailing "
                "distance, and the PFZ points are synthetic.")
     return {"kind": "nearest_pfz", "answer": answer, "points": top,
-            "ground": g["local_name"], "ground_id": g["ground_id"],
-            "method": "Haversine ranking from the ground centroid.",
+            "ground": origin_name, "ground_id": g["ground_id"] if user_lat is None else "GPS",
+            "method": "Haversine ranking from the origin.",
             "provenance": "SYNTHETIC"}
 
 
-def geofence_check(ground_id: str) -> Dict[str, Any]:
+def geofence_check(ground_id: str, user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
     g = resolve_ground(ground_id)
+    lat = user_lat if user_lat is not None else g["centroid_lat"]
+    lon = user_lon if user_lon is not None else g["centroid_lon"]
+    origin_name = "Your location" if user_lat is not None else g["local_name"]
+
     zones = []
     for z in ZONES:
-        status, dist = zone_status(g["centroid_lat"], g["centroid_lon"],
-                                   z["geojson"], z["buffer_km"])
+        status, dist = zone_status(lat, lon, z["geojson"], z["buffer_km"])
         if status == "CLEAR" and dist <= g["radius_km"]:
             status = "NEAR"
         zones.append({"zone_id": z["zone_id"], "name": z["name"], "type": z["type"],
@@ -80,15 +86,15 @@ def geofence_check(ground_id: str) -> Dict[str, Any]:
     if breaches:
         parts = [f"{z['name']} ({z['type']}, {z['status'].lower()}, {z['distance_km']} km)"
                  for z in breaches]
-        answer = (f"{g['local_name']} touches {len(breaches)} restricted or protected "
-                  f"area(s) before departure: {'; '.join(parts)}.")
+        answer = (f"{origin_name} touches {len(breaches)} restricted or protected "
+                  f"area(s): {'; '.join(parts)}.")
     else:
-        answer = (f"{g['local_name']} is clear of every IMBL, protected, sensitive and "
+        answer = (f"{origin_name} is clear of every IMBL, protected, sensitive and "
                   f"restricted zone on file. Nearest is {zones[0]['name']} at "
                   f"{zones[0]['distance_km']} km.")
     answer += " Zone polygons are synthetic and flagged as such."
     return {"kind": "geofence_check", "answer": answer, "zones": zones,
-            "ground": g["local_name"], "ground_id": g["ground_id"],
+            "ground": origin_name, "ground_id": g["ground_id"] if user_lat is None else "GPS",
             "breach_count": len(breaches), "provenance": "SYNTHETIC"}
 
 
@@ -118,10 +124,12 @@ def answer_for_intent(intent: str, slots: Dict[str, Any],
                       cruise_knots: float) -> Optional[Dict[str, Any]]:
     """Returns None for crossing_safety, which the advisory engine handles."""
     ground = slots.get("ground_id") or DEFAULT_GROUND
+    user_lat = slots.get("user_lat")
+    user_lon = slots.get("user_lon")
     if intent == "nearest_pfz":
-        return nearest_pfz(ground)
+        return nearest_pfz(ground, user_lat=user_lat, user_lon=user_lon)
     if intent == "geofence_check":
-        return geofence_check(ground)
+        return geofence_check(ground, user_lat=user_lat, user_lon=user_lon)
     if intent == "route_advisory":
         return route_advisory(slots.get("ground_id") or "G-QUILON", cruise_knots)
     if intent == "productivity":

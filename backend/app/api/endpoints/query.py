@@ -32,6 +32,9 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
     """Runs the agent graph and persists the query, trace and advisory."""
     session = await _load_or_create_session(db, request)
     context: Dict[str, Any] = dict(session.context or {})
+    if request.user_lat is not None and request.user_lon is not None:
+        context["user_lat"] = request.user_lat
+        context["user_lon"] = request.user_lon
 
     # Discovery runs against the live registry before the graph, so the graph
     # itself stays serialisable and the decision appears as its own trace node.
