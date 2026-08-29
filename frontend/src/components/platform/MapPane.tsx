@@ -160,32 +160,42 @@ export default function MapPane() {
     // Clear old markers
     pfzMarkersRef.current.forEach(m => m.remove());
     pfzMarkersRef.current = [];
+      if (active?.intent_result?.kind === 'nearest_pfz' && active.intent_result.points) {
+        const bounds = new maplibregl.LngLatBounds();
+        let added = false;
+        
+        active.intent_result.points.forEach((pfz: any, idx: number) => {
+          const el = document.createElement('div');
+          // Top PFZ gets a bouncing bigger marker, others get standard
+          const isTop = idx === 0;
+          el.className = `flex items-center justify-center rounded-full bg-emerald-600 shadow-md border-2 border-white text-white font-bold text-[10px] ${isTop ? 'h-7 w-7 animate-bounce' : 'h-5 w-5'}`;
+          el.innerHTML = `${idx + 1}`;
 
-    if (active?.intent_result?.kind === 'nearest_pfz' && active.intent_result.points) {
-      active.intent_result.points.forEach((pfz: any, idx: number) => {
-        const el = document.createElement('div');
-        // Top PFZ gets a bouncing bigger marker, others get standard
-        const isTop = idx === 0;
-        el.className = `flex items-center justify-center rounded-full bg-emerald-600 shadow-md border-2 border-white text-white font-bold text-[10px] ${isTop ? 'h-7 w-7 animate-bounce' : 'h-5 w-5'}`;
-        el.innerHTML = `${idx + 1}`;
-        
-        const popupHTML = `
-          <div class="p-1">
-            <strong class="text-emerald-700">${pfz.pfz_id}</strong><br/>
-            ${pfz.distance_km} km away<br/>
-            ${pfz.depth_m} m depth
-          </div>
-        `;
-        
-        const m = new maplibregl.Marker({ element: el })
-          .setLngLat([pfz.lon, pfz.lat])
-          .setPopup(new maplibregl.Popup({ offset: 10 }).setHTML(popupHTML))
-          .addTo(map);
-        
-        pfzMarkersRef.current.push(m);
-      });
-    }
-  }, [active, ready]);
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([pfz.lon, pfz.lat])
+            .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(`
+              <div class="text-xs p-1">
+                <strong>PFZ ${idx + 1}</strong><br/>
+                Depth: ${pfz.depth_m}m<br/>
+                Confidence: ${(pfz.confidence * 100).toFixed(0)}%
+              </div>
+            `))
+            .addTo(map);
+            
+          pfzMarkersRef.current.push(marker);
+          bounds.extend([pfz.lon, pfz.lat]);
+          added = true;
+        });
+
+        // Frame the PFZ points and the user's location
+        if (added) {
+          if (context.user_lat && context.user_lon) {
+            bounds.extend([context.user_lon, context.user_lat]);
+          }
+          map.fitBounds(bounds, { padding: 80, maxZoom: 12, duration: 800 });
+        }
+      }
+    }, [active, ready, context.user_lat, context.user_lon]);
 
   // FR-21: the backend reports which layers the answer actually used.
   useEffect(() => {

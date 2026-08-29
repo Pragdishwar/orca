@@ -20,10 +20,10 @@ from backend.app.core import config_store
 INTENT_LAYERS = {
     "crossing_safety": ["inlet", "hazard_corridor"],
     "marine_conditions": ["inlet"],
-    "nearest_pfz": ["inlet", "pfz"],
-    "geofence_check": ["inlet", "geofences"],
+    "nearest_pfz": ["pfz"],
+    "geofence_check": ["geofences"],
     "route_advisory": ["inlet", "route", "hazard_corridor"],
-    "productivity": ["inlet", "anomaly"],
+    "productivity": ["anomaly"],
     "coverage": ["inlet", "coverage_line"],
     "greeting": [],
     "location": [],
