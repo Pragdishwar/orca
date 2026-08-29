@@ -2,7 +2,7 @@
   "_comment": "D-16. FR-28: edit this file to change what a persona shows. No agent code reads persona logic; the stack is identical across all five.",
   "rows": [
     {"persona_id": "fisherman", "label": "Fisherman",
-     "default_layers": ["inlet", "hazard_corridor", "pfz"],
+     "default_layers": ["inlet", "hazard_corridor", "pfz", "geofences", "grounds", "coverage_line"],
      "answer_framing": "Direct and practical. Lead with the verdict and the turn-back time.",
      "suggested_queries": [
        "Is it safe to go out tomorrow morning?",
@@ -10,7 +10,7 @@
        "And for the 12 m trawler?",
        "Where is the nearest fishing zone?"]},
     {"persona_id": "disaster_mgmt", "label": "Disaster Mgmt",
-     "default_layers": ["inlet", "hazard_corridor", "geofences", "coverage_line"],
+     "default_layers": ["inlet", "hazard_corridor", "geofences", "grounds", "coverage_line", "pfz"],
      "answer_framing": "Population and exposure first. State how many registered boats are affected and the release state.",
      "suggested_queries": [
        "Which boats are at risk tomorrow?",
@@ -18,7 +18,7 @@
        "What is the worst crossing window this week?",
        "How many boats does a DO_NOT_CROSS affect?"]},
     {"persona_id": "coast_guard", "label": "Coast Guard",
-     "default_layers": ["inlet", "hazard_corridor", "geofences", "route"],
+     "default_layers": ["inlet", "hazard_corridor", "geofences", "grounds", "route", "coverage_line", "pfz"],
      "answer_framing": "Operational. Give bearings, corridor and turn-back time; flag zone breaches explicitly.",
      "suggested_queries": [
        "Plot a corridor to Wadge Bank",
@@ -26,7 +26,7 @@
        "What is the turn-back time for a 9 m FRP?",
        "Is any boat inside a restricted zone?"]},
     {"persona_id": "policy_maker", "label": "Policy Maker",
-     "default_layers": ["inlet", "coverage_line", "geofences"],
+     "default_layers": ["inlet", "coverage_line", "geofences", "grounds", "hazard_corridor", "pfz"],
      "answer_framing": "Aggregate and comparative. Lead with days-per-year flagged and cost per bulletin.",
      "suggested_queries": [
        "How many days a year would this close the bar?",
@@ -34,7 +34,7 @@
        "How does the index compare to the naive baseline?",
        "What share of alerts reach a boat with no phone?"]},
     {"persona_id": "researcher", "label": "Researcher",
-     "default_layers": ["inlet", "anomaly", "pfz"],
+     "default_layers": ["inlet", "anomaly", "pfz", "geofences", "grounds", "coverage_line"],
      "answer_framing": "Method-forward. Name the sources, the weights and the caveats before the conclusion.",
      "suggested_queries": [
        "Show the chlorophyll anomaly for this season",

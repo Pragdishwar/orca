@@ -69,9 +69,6 @@ ZONES: List[Dict[str, Any]] = [
     {"zone_id": "Z-SENS-MUT", "name": "Muttukadu Turtle Nesting Zone", "type": "SENSITIVE",
      "buffer_km": 1.5, "provenance": "LIVE_DATABASE",
      "geojson": _box(12.80, 80.24, 12.95, 80.27)},
-    {"zone_id": "Z-TEST-GLOBAL", "name": "Global Render Test", "type": "RESTRICTED",
-     "buffer_km": 1.0, "provenance": "LIVE_DATABASE",
-     "geojson": _box(-80, -170, 80, 170)},
 ]
 
 # D-09: demo boat registry. threshold_bucket points at a D-10 hull class.
