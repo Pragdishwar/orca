@@ -82,9 +82,9 @@ def pfz_points(lat: float = None, lon: float = None) -> List[Dict[str, Any]]:
     if lat is None or lon is None:
         lat, lon = INLET["lat"], INLET["lon"]
         
-    # Generate a 3x3 grid around the user, spaced by ~15km (0.15 degrees)
-    lats = [round(lat + d, 4) for d in (-0.15, 0, 0.15)]
-    lons = [round(lon + d, 4) for d in (-0.15, 0, 0.15)]
+    # Generate a 5x5 grid around the user, spaced by ~15km (0.15 degrees)
+    lats = [round(lat + d, 4) for d in (-0.30, -0.15, 0, 0.15, 0.30)]
+    lons = [round(lon + d, 4) for d in (-0.30, -0.15, 0, 0.15, 0.30)]
     
     grid_lats = []
     grid_lons = []
@@ -108,7 +108,11 @@ def pfz_points(lat: float = None, lon: float = None) -> List[Dict[str, Any]]:
         for i, point_data in enumerate(data):
             # Get current hour's velocity
             velocities = point_data.get("hourly", {}).get("ocean_current_velocity", [])
-            vel = velocities[0] if velocities and velocities[0] is not None else 0.0
+            # If the marine API returns null, this coordinate is on land (or out of bounds)
+            if not velocities or velocities[0] is None:
+                continue
+                
+            vel = velocities[0]
             
             pts.append({
                 "pfz_id": f"PFZ-{i + 1:03d}",
