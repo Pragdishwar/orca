@@ -30,23 +30,11 @@ RECORD_END = RECORD_START + timedelta(days=RECORD_YEARS * 365 - 1)
 VERDICT_ORDER = {"SAFE": 0, "MARGINAL": 1, "DO_NOT_CROSS": 2}
 
 
-def resolve_record_datetime(dt: datetime) -> Tuple[datetime, bool]:
-    """Map a wall-clock date onto the analysis record.
-
-    The record covers 2022-2024. A question about a date outside it is answered
-    from the same calendar day in the most recent record year, and the trace
-    says so - the alternative is refusing every query asked today.
-    """
+def resolve_record_datetime(dt: datetime) -> tuple[datetime, bool]:
+    """Ensure the target datetime is UTC."""
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    if RECORD_START <= dt <= RECORD_END:
-        return dt, False
-    year = RECORD_START.year + RECORD_YEARS - 1
-    try:
-        mapped = dt.replace(year=year)
-    except ValueError:  # 29 February onto a non-leap year
-        mapped = dt.replace(year=year, day=28)
-    return mapped, True
+    return dt, False
 
 
 def hourly_forecast(start: datetime, end: datetime) -> List[Dict[str, Any]]:
@@ -80,6 +68,8 @@ def build_advisory(
     departure_hour: int = DEFAULT_DEPARTURE_HOUR,
     return_hour: int = DEFAULT_RETURN_HOUR,
     distance_nm: float = DEFAULT_GROUND_DISTANCE_NM,
+    lat: float = INLET["lat"],
+    lon: float = INLET["lon"],
 ) -> Dict[str, Any]:
     """Compute the full advisory payload for one hull on one day."""
     band = config_store.band_for(hull_class)
@@ -90,9 +80,9 @@ def build_advisory(
     if deadline <= departure:
         deadline = departure + timedelta(hours=8)
 
-    rows = record_window(departure, deadline)
+    rows = record_window(departure, deadline, lat, lon)
     if not rows:
-        rows = [row_at(departure)]
+        rows = [row_at(departure, lat, lon)]
 
     hourly = []
     for row in rows:

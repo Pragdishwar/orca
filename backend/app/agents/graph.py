@@ -349,7 +349,12 @@ def run_query(
     hull = parsed["slots"].get("hull_class") or "FRP_SMALL"
     target = datetime.fromisoformat(parsed["slots"]["date"]).replace(tzinfo=timezone.utc)
 
-    computed = build_advisory(hull, target)
+    computed = build_advisory(
+        hull_class=hull, 
+        target=target,
+        lat=parsed["slots"].get("user_lat", INLET["lat"]) or INLET["lat"],
+        lon=parsed["slots"].get("user_lon", INLET["lon"]) or INLET["lon"]
+    )
     computed["staleness_hours"] = 0.0
 
     state: AgentState = {

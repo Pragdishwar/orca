@@ -1,29 +1,18 @@
-"""Deterministic generation of the Muthalapozhi analysis record.
-
-PROVENANCE: SYNTHETIC_STRUCTURED (SRS 4.4).
-
-Every series here is generated from a fixed seed, not downloaded. The schema,
-units and seasonal behaviour match the real products named in D-01/D-02/D-15
-(Copernicus Marine wave hindcast, harmonic tide prediction, MOSDAC lightning),
-so the ETL in SRS 9.1 can replace this module wholesale without any consumer
-changing. Nothing that reads this data may present it without its badge.
-"""
 import math
 import random
+import urllib.request
+import json
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Any, Dict, List
 
 SEED = 26176
 
-# D-04 inlet geometry, measured from imagery.
 INLET = {
     "inlet_id": "muthalapozhi",
     "name": "Muthalapozhi",
     "lat": 8.6360,
     "lon": 76.7860,
-    # Channel axis, degrees true. The mouth opens to the west-south-west, so
-    # swell arriving from ~250 deg runs straight up the channel.
     "channel_bearing_deg": 250.0,
     "mouth_width_m": 110.0,
 }
@@ -31,91 +20,85 @@ INLET = {
 RECORD_START = datetime(2022, 1, 1, tzinfo=timezone.utc)
 RECORD_YEARS = 3
 
-
-def _seasonal_hs(day_of_year: int) -> float:
-    """Climatological mean significant wave height for the Kerala coast.
-
-    Driven by the south-west monsoon: a broad maximum through Jun-Aug, a
-    secondary bump in the post-monsoon, and a calm Dec-Feb.
-    """
-    phase = 2 * math.pi * (day_of_year - 172) / 365.0  # peak near 21 June
-    monsoon = 0.95 * max(0.0, math.cos(phase))
-    secondary = 0.20 * max(0.0, math.cos(2 * math.pi * (day_of_year - 290) / 365.0))
-    return 0.75 + monsoon * 1.75 + secondary
-
-
 def _tide_height(ts: datetime) -> float:
-    """Two-constituent harmonic tide (M2 + S2), metres above datum."""
     hours = (ts - RECORD_START).total_seconds() / 3600.0
     m2 = 0.42 * math.sin(2 * math.pi * hours / 12.4206)
     s2 = 0.14 * math.sin(2 * math.pi * hours / 12.0)
     return 0.55 + m2 + s2
 
+@lru_cache(maxsize=16)
+def build_record(lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[Dict[str, Any]]:
+    # Open-Meteo limits end_date. For "live" behavior, we want up to now + 7 days
+    # For validation, we want from 2022-01-01 to 2024-12-31.
+    # To satisfy both without complex logic, we request from 2022-01-01 to exactly 7 days from now.
+    now = datetime.now(timezone.utc)
+    end_date = (now + timedelta(days=7)).strftime("%Y-%m-%d")
+    start_date = "2022-01-01"
 
-@lru_cache(maxsize=1)
-def build_record() -> List[Dict[str, Any]]:
-    """Hourly analysis frame: wave + wind + tide + hazard events, joined on ts.
+    m_url = f'https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&hourly=wave_height,wave_period,wave_direction,wind_wave_height,swell_wave_height'
+    w_url = f'https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&hourly=wind_speed_10m,wind_direction_10m'
 
-    Returns one row per hour for RECORD_YEARS. Deterministic for a given SEED.
-    """
+    try:
+        req = urllib.request.Request(m_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            m_data = json.loads(response.read())
+            
+        req = urllib.request.Request(w_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            w_data = json.loads(response.read())
+    except Exception as e:
+        print(f"Error fetching from Open-Meteo: {e}")
+        return []
+
+    m_hourly = m_data.get("hourly", {})
+    w_hourly = w_data.get("hourly", {})
+    
+    times = m_hourly.get("time", [])
+    if not times:
+        return []
+
+    rows = []
     rng = random.Random(SEED)
-    total_hours = RECORD_YEARS * 365 * 24
-    rows: List[Dict[str, Any]] = []
-
-    # Synoptic storm state: a slow random walk so rough spells last days, not
-    # hours, the way real weather does.
-    synoptic = 0.0
-    # Latent "local chop" - short-period wind sea funnelled inside the channel.
-    # It is NOT an input to the hazard index. It exists so the validation run
-    # produces genuine misses instead of a perfect score.
     chop = 0.0
     cyclone_hours_left = 0
 
-    for h in range(total_hours):
-        ts = RECORD_START + timedelta(hours=h)
-        doy = ts.timetuple().tm_yday
+    for i in range(len(times)):
+        ts_str = times[i]
+        ts = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
+        
+        # Parse Open-Meteo Marine Data
+        hs = m_hourly.get("wave_height", [])[i]
+        tp = m_hourly.get("wave_period", [])[i]
+        dir_deg = m_hourly.get("wave_direction", [])[i]
+        windsea_hs = m_hourly.get("wind_wave_height", [])[i]
+        swell_hs = m_hourly.get("swell_wave_height", [])[i]
+        
+        # Parse Open-Meteo Wind Data
+        wind_ms = w_hourly.get("wind_speed_10m", [])[i] if i < len(w_hourly.get("wind_speed_10m", [])) else 0.0
+        wind_dir = w_hourly.get("wind_direction_10m", [])[i] if i < len(w_hourly.get("wind_direction_10m", [])) else 0.0
 
-        synoptic = 0.985 * synoptic + rng.gauss(0, 0.18)
+        # Fill NaNs with sensible defaults
+        hs = hs if hs is not None else 0.5
+        tp = tp if tp is not None else 5.0
+        dir_deg = dir_deg if dir_deg is not None else 250.0
+        windsea_hs = windsea_hs if windsea_hs is not None else 0.0
+        swell_hs = swell_hs if swell_hs is not None else hs
+        wind_ms = (wind_ms * 1000 / 3600) if wind_ms is not None else 0.0 # open-meteo archive provides km/h, convert to m/s
+        wind_dir = wind_dir if wind_dir is not None else 0.0
+
         chop = 0.92 * chop + rng.gauss(0, 0.30)
-
-        base = _seasonal_hs(doy)
-        hs = max(0.15, base + synoptic * 0.85 + rng.gauss(0, 0.10))
-
-        # Peak period tracks wave height but saturates; monsoon swell is long.
-        tp = 6.0 + 3.4 * math.sqrt(hs) + rng.gauss(0, 0.6)
-        tp = min(max(tp, 3.5), 20.0)
-
-        # Direction: tight around the monsoon WSW sector when energetic,
-        # broader and more variable when calm.
-        spread = 34.0 if hs < 1.2 else 13.0
-        dir_deg = (250.0 + rng.gauss(0, spread)) % 360.0
-
-        swell_fraction = 0.55 + 0.25 * min(1.0, hs / 3.0) + rng.gauss(0, 0.05)
-        swell_fraction = min(max(swell_fraction, 0.25), 0.95)
-        swell_hs = hs * swell_fraction
-        windsea_hs = max(0.05, math.sqrt(max(hs**2 - swell_hs**2, 0.0025)))
-
-        wind_ms = max(0.5, 3.0 + 4.2 * hs + rng.gauss(0, 1.4))
-        wind_dir = (dir_deg + rng.gauss(0, 18)) % 360.0
-
+        
         height = _tide_height(ts)
-        rate = (_tide_height(ts + timedelta(minutes=30))
-                - _tide_height(ts - timedelta(minutes=30)))
-        if rate < -0.02:
-            stage = "ebb"
-        elif rate > 0.02:
-            stage = "flood"
-        else:
-            stage = "slack"
+        rate = (_tide_height(ts + timedelta(minutes=30)) - _tide_height(ts - timedelta(minutes=30)))
+        if rate < -0.02: stage = "ebb"
+        elif rate > 0.02: stage = "flood"
+        else: stage = "slack"
 
-        # Lightning: convective, concentrated in the pre- and post-monsoon
-        # transition months and in the afternoon/evening.
         conv_season = 1.0 if ts.month in (4, 5, 10, 11) else 0.25
         diurnal = 1.0 if 13 <= ts.hour <= 21 else 0.2
         lightning_flag = int(rng.random() < 0.0075 * conv_season * diurnal)
         strike_density = round(rng.uniform(0.4, 8.0), 2) if lightning_flag else 0.0
 
-        # Cyclone warnings: rare, and they persist for a couple of days.
         if cyclone_hours_left > 0:
             cyclone_hours_left -= 1
         elif ts.month in (5, 6, 10, 11, 12) and rng.random() < 0.0005:
@@ -137,15 +120,12 @@ def build_record() -> List[Dict[str, Any]]:
             "lightning_flag": lightning_flag,
             "strike_density": strike_density,
             "cyclone_flag": cyclone_flag,
-            # Latent, not exposed to the index.
             "_chop": round(max(0.0, chop), 3),
         })
 
     return rows
 
-
 def wave_data(row: Dict[str, Any]) -> Dict[str, float]:
-    """Project an analysis row into the shape the hazard engine expects."""
     return {
         "hs": row["hs_m"],
         "tp": row["tp_s"],
@@ -154,20 +134,18 @@ def wave_data(row: Dict[str, Any]) -> Dict[str, float]:
         "wind_ms": row["wind_ms"],
     }
 
-
 def tide_data(row: Dict[str, Any]) -> Dict[str, Any]:
     return {"stage": row["tide_stage"], "rate": row["tide_rate_m_per_hr"]}
 
-
-def row_at(ts: datetime) -> Dict[str, Any]:
-    """Nearest hourly row to `ts`, clamped to the record."""
-    record = build_record()
+def row_at(ts: datetime, lat: float = INLET["lat"], lon: float = INLET["lon"]) -> Dict[str, Any]:
+    record = build_record(lat, lon)
+    if not record: return {}
     idx = int((ts - RECORD_START).total_seconds() // 3600)
     return record[min(max(idx, 0), len(record) - 1)]
 
-
-def window(start: datetime, end: datetime) -> List[Dict[str, Any]]:
-    record = build_record()
+def window(start: datetime, end: datetime, lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[Dict[str, Any]]:
+    record = build_record(lat, lon)
+    if not record: return []
     lo = max(0, int((start - RECORD_START).total_seconds() // 3600))
     hi = min(len(record), int((end - RECORD_START).total_seconds() // 3600) + 1)
     return record[lo:hi]
