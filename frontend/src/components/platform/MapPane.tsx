@@ -412,11 +412,11 @@ export default function MapPane() {
       });
       add({
         id: 'geofences-fill', type: 'fill', source: 'geofences',
-        paint: { 'fill-color': ['get', 'colour'], 'fill-opacity': 0.2 },
+        paint: { 'fill-color': ['get', 'colour'], 'fill-opacity': 0.35 },
       });
       add({
         id: 'geofences-line', type: 'line', source: 'geofences',
-        paint: { 'line-color': ['get', 'colour'], 'line-width': 1.5 },
+        paint: { 'line-color': ['get', 'colour'], 'line-width': 3 },
       });
       add({
         id: 'hazard_corridor-fill', type: 'fill', source: 'hazard_corridor',
