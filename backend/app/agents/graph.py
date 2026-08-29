@@ -228,9 +228,15 @@ The user asked: "{state.get('user_query')}"
 
 Computed Conditions:
 - Inlet: {adv.get('inlet_name')}
+- Boat/Hull Class: {adv.get('hull_label')}
 - Verdict: {adv.get('verdict')}
-- Hazard Index: {adv.get('index_value')}
-- Explanation: {adv.get('explanation')}
+- Hazard Index: {adv.get('index_value')} (Limit for this hull: {adv.get('index_unsafe')})
+- Swell: {adv.get('hs_m')} m at {adv.get('tp_s')} s
+- Tide: {adv.get('tide_stage')} tide at peak hour ({adv.get('peak_hour')}:00)
+- Cyclone Warning: {'Yes' if adv.get('cyclone_flag') else 'No'}
+- Lightning: {'Yes' if adv.get('lightning_flag') else 'No'}
+- Turn-back time: {adv.get('turn_back_label') or 'N/A'}
+- Safe crossing window: {adv.get('return_window', {}).get('start_label', 'N/A') if adv.get('return_window') else 'N/A'} to {adv.get('return_window', {}).get('end_label', 'N/A') if adv.get('return_window') else 'N/A'}
 
 Response Framing:
 {framing}
