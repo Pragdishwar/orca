@@ -121,6 +121,33 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
     if intent_result and state.get("guard_result") != "REJECT":
         answer_text = intent_result["answer"]
 
+    lang = state.get("language", "en")
+    if lang != "en":
+        import os
+        import httpx
+        api_key = os.environ.get("GROQ_API_KEY")
+        if api_key:
+            target_lang = "Malayalam" if lang == "ml" else "Tamil"
+            try:
+                with httpx.Client() as client:
+                    resp = client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {api_key}"},
+                        json={
+                            "model": "llama3-8b-8192",
+                            "messages": [
+                                {"role": "system", "content": f"You are a translator. Translate the following text to {target_lang}. Respond ONLY with the translated text, no other comments."},
+                                {"role": "user", "content": answer_text}
+                            ]
+                        },
+                        timeout=10.0
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        answer_text = data["choices"][0]["message"]["content"].strip()
+            except Exception:
+                pass
+
     from fastapi.responses import StreamingResponse
     import json
     import asyncio
