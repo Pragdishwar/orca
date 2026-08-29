@@ -32,26 +32,41 @@ def build_record(lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[D
     # For validation, we want from 2022-01-01 to 2024-12-31.
     # To satisfy both without complex logic, we request from 2022-01-01 to exactly 7 days from now.
     now = datetime.now(timezone.utc)
+    yesterday_date = (now - timedelta(days=1)).strftime("%Y-%m-%d")
     end_date = (now + timedelta(days=7)).strftime("%Y-%m-%d")
     start_date = "2022-01-01"
 
     m_url = f'https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&hourly=wave_height,wave_period,wave_direction,wind_wave_height,swell_wave_height'
-    w_url = f'https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&hourly=wind_speed_10m,wind_direction_10m'
+    w_url_archive = f'https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={yesterday_date}&hourly=wind_speed_10m,wind_direction_10m'
+    w_url_forecast = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&past_days=1&forecast_days=7&hourly=wind_speed_10m,wind_direction_10m'
 
     try:
         req = urllib.request.Request(m_url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
             m_data = json.loads(response.read())
             
-        req = urllib.request.Request(w_url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(w_url_archive, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req) as response:
-            w_data = json.loads(response.read())
+            w_archive = json.loads(response.read())
+            
+        req = urllib.request.Request(w_url_forecast, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            w_forecast = json.loads(response.read())
     except Exception as e:
         print(f"Error fetching from Open-Meteo: {e}")
         return []
 
     m_hourly = m_data.get("hourly", {})
-    w_hourly = w_data.get("hourly", {})
+    
+    # Merge wind archive and forecast
+    w_times = w_archive.get("hourly", {}).get("time", []) + w_forecast.get("hourly", {}).get("time", [])
+    w_speeds = w_archive.get("hourly", {}).get("wind_speed_10m", []) + w_forecast.get("hourly", {}).get("wind_speed_10m", [])
+    w_dirs = w_archive.get("hourly", {}).get("wind_direction_10m", []) + w_forecast.get("hourly", {}).get("wind_direction_10m", [])
+    
+    wind_dict = {}
+    for i, t in enumerate(w_times):
+        wind_dict[t] = (w_speeds[i], w_dirs[i])
+
     
     times = m_hourly.get("time", [])
     if not times:
@@ -74,8 +89,11 @@ def build_record(lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[D
         swell_hs = m_hourly.get("swell_wave_height", [])[i]
         
         # Parse Open-Meteo Wind Data
-        wind_ms = w_hourly.get("wind_speed_10m", [])[i] if i < len(w_hourly.get("wind_speed_10m", [])) else 0.0
-        wind_dir = w_hourly.get("wind_direction_10m", [])[i] if i < len(w_hourly.get("wind_direction_10m", [])) else 0.0
+        wind_tuple = wind_dict.get(ts_str)
+        if wind_tuple:
+            wind_ms, wind_dir = wind_tuple
+        else:
+            wind_ms, wind_dir = 0.0, 0.0
 
         # Fill NaNs with sensible defaults
         hs = hs if hs is not None else 0.5
