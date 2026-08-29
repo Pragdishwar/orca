@@ -192,14 +192,51 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </div>
       )}
 
-      <main className="mx-auto w-full max-w-[1800px] flex-1 p-4 pb-24">{children}</main>
+      <div className="flex flex-1 overflow-hidden">
+        <nav
+          aria-label="Desktop Main"
+          className="hidden md:flex w-64 flex-col border-r border-slate-200 bg-white p-4 overflow-y-auto shrink-0"
+        >
+          <div className="flex flex-col gap-2">
+            {TABS.filter(tab => tab.roles.includes(user?.role || '')).map(({ id, label, Icon }) => {
+              const on = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  aria-current={on ? 'page' : undefined}
+                  className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5
+                    transition-colors ${on
+                      ? 'bg-sky-50 text-sky-700 font-medium'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                >
+                  <Icon className="h-5 w-5" aria-hidden />
+                  <span className="text-sm">{label}</span>
+                  {id === 'alerts' && unreleased > 0 && (
+                    <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5
+                      text-xs font-bold text-white">
+                      {unreleased}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        <main className="flex-1 overflow-auto p-4 pb-24 md:pb-4">
+          <div className="mx-auto w-full max-w-[1800px]">
+            {children}
+          </div>
+        </main>
+      </div>
 
       <nav
-        aria-label="Main"
+        aria-label="Mobile Main"
         className="fixed bottom-0 z-40 w-full border-t border-slate-200 bg-white
-          px-2 py-1.5 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]"
+          px-2 py-1.5 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] md:hidden"
       >
-        <div className="mx-auto flex max-w-3xl justify-between">
+        <div className="mx-auto flex justify-between">
           {TABS.filter(tab => tab.roles.includes(user?.role || '')).map(({ id, label, Icon }) => {
             const on = activeTab === id;
             return (
@@ -213,7 +250,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                     : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
               >
                 <Icon className="h-5 w-5" aria-hidden />
-                <span className="mt-0.5 text-[10px] font-semibold">{label}</span>
+                <span className="mt-0.5 text-[10px] font-semibold truncate w-full text-center">{label}</span>
                 {id === 'alerts' && unreleased > 0 && (
                   <span className="absolute right-2 top-0 rounded-full bg-red-600 px-1.5
                     text-[10px] font-bold text-white">
