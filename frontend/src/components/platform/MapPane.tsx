@@ -140,15 +140,17 @@ export default function MapPane() {
       } else {
         userMarkerRef.current.setLngLat([context.user_lon, context.user_lat]);
       }
-      
+    }
+  }, [context.user_lat, context.user_lon, ready]);
+
+  useEffect(() => {
+    if (mapRef.current && context.user_lat && context.user_lon) {
       if (!hasPannedToUser.current) {
         hasPannedToUser.current = true;
-        if (active?.intent === 'location') {
-          map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11 });
-        }
+        mapRef.current.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11 });
       }
     }
-  }, [context.user_lat, context.user_lon, ready, active]);
+  }, [context.user_lat, context.user_lon]);
 
   // Handle PFZ Highlights
   useEffect(() => {
@@ -216,8 +218,8 @@ export default function MapPane() {
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: BASEMAP_STYLE,
-      center: [76.786, 8.636],
-      zoom: 10,
+      center: [78.9629, 20.5937],
+      zoom: 4,
       // Expanded to include the whole India map
       maxBounds: [[68.0, 6.5], [97.5, 37.5]],
       minZoom: 3.5,
@@ -581,13 +583,18 @@ export default function MapPane() {
           </button>
           {panelOpen && (
             <button
-              onClick={() => mapRef.current?.flyTo({
-                center: [76.786, 8.636], zoom: 11, duration: 800 })}
-              title="Back to Muthalapozhi"
+              onClick={() => {
+                if (context.user_lat && context.user_lon) {
+                  mapRef.current?.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11, duration: 800 });
+                } else {
+                  mapRef.current?.flyTo({ center: [78.9629, 20.5937], zoom: 4, duration: 800 }); // Center of India
+                }
+              }}
+              title="My Location"
               className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]
                 font-semibold text-slate-600 hover:bg-slate-100"
             >
-              Inlet
+              MY LOCATION
             </button>
           )}
           {panelOpen && (
