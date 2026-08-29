@@ -74,18 +74,22 @@ BOATS: List[Dict[str, Any]] = [
 ]
 
 
-def pfz_points() -> List[Dict[str, Any]]:
-    """D-06: PFZ advisory points, structured to match the published format."""
+def pfz_points(lat: float = None, lon: float = None) -> List[Dict[str, Any]]:
+    """D-06: PFZ advisory points, dynamically generated around the target to support nationwide queries."""
     import random
-    rng = random.Random(919)
+    if lat is None or lon is None:
+        lat, lon = INLET["lat"], INLET["lon"]
+        
+    rng = random.Random(hash((round(lat, 1), round(lon, 1))))
     pts = []
     for i in range(24):
-        lat = round(rng.uniform(8.20, 8.95), 4)
-        lon = round(rng.uniform(76.20, 76.78), 4)
+        # Scatter within roughly +/- 0.5 degrees (~55km) of the center
+        p_lat = round(rng.uniform(lat - 0.5, lat + 0.5), 4)
+        p_lon = round(rng.uniform(lon - 0.5, lon + 0.5), 4)
         pts.append({
             "pfz_id": f"PFZ-{i + 1:03d}",
-            "lat": lat,
-            "lon": lon,
+            "lat": p_lat,
+            "lon": p_lon,
             "depth_m": round(rng.uniform(25, 180), 1),
             "validity_hrs": 24,
             "confidence": round(rng.uniform(0.55, 0.95), 2),

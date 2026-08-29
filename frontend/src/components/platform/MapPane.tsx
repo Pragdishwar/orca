@@ -332,7 +332,7 @@ export default function MapPane() {
     }
     setReady(true);
     try {
-      const data = await api.mapLayers(active?.verdict, active?.index_value);
+      const data = await api.mapLayers(active?.verdict, active?.index_value, context.user_lat, context.user_lon);
 
       // The route corridor is a real endpoint call, not a static layer. It is
       // cached against the chosen destination: a redraw triggered by some other
@@ -534,7 +534,7 @@ export default function MapPane() {
       // Adding layers can fail if the style was swapped mid-flight. Retry once.
       window.setTimeout(() => { void draw(); }, 500);
     }
-  }, [active, visible.route, destGround, styleEpoch]);
+  }, [active, visible.route, destGround, styleEpoch, context.user_lat, context.user_lon]);
 
   useEffect(() => { void draw(); }, [draw]);
 

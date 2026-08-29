@@ -34,7 +34,7 @@ def nearest_pfz(ground_id: str, limit: int = 3, user_lat: Optional[float] = None
     origin_name = "your current location" if user_lat is not None else g["local_name"]
     
     ranked = []
-    for p in pfz_points():
+    for p in pfz_points(lat, lon):
         d = haversine_km(lat, lon, p["lat"], p["lon"])
         ranked.append({
             "pfz_id": p["pfz_id"],

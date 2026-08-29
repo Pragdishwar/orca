@@ -32,11 +32,13 @@ ZONE_COLOURS = {
 async def get_layers(
     verdict: Optional[str] = Query(None, description="Colours the hazard corridor."),
     index_value: float = Query(0.0, ge=0.0, le=1.0),
+    user_lat: Optional[float] = Query(None),
+    user_lon: Optional[float] = Query(None),
 ) -> Dict[str, Any]:
     return {
         "inlet": inlet_feature(),
         "hazard_corridor": _hazard_corridor(verdict, index_value),
-        "pfz": _pfz_layer(),
+        "pfz": _pfz_layer(user_lat, user_lon),
         "geofences": _zone_layer(),
         "grounds": {"type": "FeatureCollection", "features": ground_rings()},
         "coverage_line": _coverage_line(),
@@ -76,13 +78,13 @@ def _hazard_corridor(verdict: Optional[str], index_value: float) -> Dict[str, An
     }]}
 
 
-def _pfz_layer() -> Dict[str, Any]:
+def _pfz_layer(user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
     return {"type": "FeatureCollection", "features": [{
         "type": "Feature",
         "properties": {"pfz_id": p["pfz_id"], "depth_m": p["depth_m"],
                        "confidence": p["confidence"], "provenance": p["provenance"]},
         "geometry": {"type": "Point", "coordinates": [p["lon"], p["lat"]]},
-    } for p in pfz_points()]}
+    } for p in pfz_points(user_lat, user_lon)]}
 
 
 def _zone_layer() -> Dict[str, Any]:

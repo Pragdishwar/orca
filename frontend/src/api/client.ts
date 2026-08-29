@@ -331,9 +331,15 @@ export const api = {
   releaseAdvisory: (id: string, officer_name: string) =>
     post<any>(`/api/advisory/${id}/release`, { officer_name }),
 
-  mapLayers: (verdict?: string, index?: number) =>
-    get<Record<string, any>>(
-      `/api/map/layers${verdict ? `?verdict=${verdict}&index_value=${index ?? 0}` : ''}`),
+  mapLayers: (verdict?: string, index?: number, lat?: number, lon?: number) => {
+    let url = `/api/map/layers?`;
+    const params = new URLSearchParams();
+    if (verdict) params.set('verdict', verdict);
+    if (index != null) params.set('index_value', index.toString());
+    if (lat != null) params.set('user_lat', lat.toString());
+    if (lon != null) params.set('user_lon', lon.toString());
+    return get<Record<string, any>>(url + params.toString());
+  },
 
   grounds: () => get<{ grounds: { ground_id: string; local_name: string; radius_km: number }[];
     privacy_note: string; }>('/api/grounds'),
