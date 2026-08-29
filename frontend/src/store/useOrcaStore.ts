@@ -241,7 +241,7 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
     try {
       if ('geolocation' in navigator) {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 2000, maximumAge: 60000 });
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 15000, maximumAge: 300000, enableHighAccuracy: false });
         });
         user_lat = pos.coords.latitude;
         user_lon = pos.coords.longitude;
