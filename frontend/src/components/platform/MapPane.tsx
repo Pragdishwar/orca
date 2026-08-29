@@ -624,12 +624,6 @@ export default function MapPane() {
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden />
                 <span className="flex-1 text-left">{label}</span>
-                {key === 'route' && (
-                  <span className="text-[9px] font-bold text-slate-400"
-                    title="Great-circle corridor, not a least-cost search">
-                    MOCK
-                  </span>
-                )}
               </button>
             );
           })}

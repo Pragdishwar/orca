@@ -120,27 +120,27 @@ function AnswerCard({ res }: { res: QueryResponse }) {
               {res.hull_label} · {res.date}
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <Cell label="Hazard index" value={res.index_value.toFixed(3)} />
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <Cell label="Hazard" value={res.index_value.toFixed(3)} />
             <Cell
-              label="Return window"
+              label="Return"
               value={res.return_window
-                ? `${res.return_window.start_label}–${res.return_window.end_label}`
+                ? `${res.return_window.start_label}-${res.return_window.end_label}`
                 : 'none'}
             />
-            <Cell label="Turn back by" value={res.turn_back_time ?? 'n/a'} />
+            <Cell label="Turn back" value={res.turn_back_time ?? 'n/a'} />
           </div>
         </details>
       ) : (
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <Cell label="Hazard index" value={res.index_value.toFixed(3)} />
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <Cell label="Hazard" value={res.index_value.toFixed(3)} />
           <Cell
-            label="Return window"
+            label="Return"
             value={res.return_window
-              ? `${res.return_window.start_label}–${res.return_window.end_label}`
+              ? `${res.return_window.start_label}-${res.return_window.end_label}`
               : 'none'}
           />
-          <Cell label="Turn back by" value={res.turn_back_time ?? 'n/a'} />
+          <Cell label="Turn back" value={res.turn_back_time ?? 'n/a'} />
         </div>
       )}
 
