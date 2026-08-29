@@ -55,7 +55,7 @@ const BASEMAP_STYLE: maplibregl.StyleSpecification = {
   },
   layers: [
     { id: 'background', type: 'background', paint: { 'background-color': '#cfe3f7' } },
-    { id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.75 } },
+    { id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.55 } },
   ],
 };
 
@@ -484,14 +484,23 @@ export default function MapPane() {
 
       const allIds = TOGGLE_LAYERS.flatMap(([, ids]) => ids);
 
-      // Guarantee ORCA's layers sit above the basemap. addLayer() appends, but
-      // any re-add or style event can leave one underneath the raster, where a
-      // 0.75-opacity tile over water hides it completely.
-      // We must move fills first, then lines, then circles, so they stack correctly.
+      // Guarantee ORCA's layers sit ABOVE the raster basemap.
+      // The OSM raster tile layer ('osm') is part of BASEMAP_STYLE, and by default
+      // addLayer() appends new layers below it. We must explicitly move it underneath
+      // all ORCA layers so geofences, hazard corridors, etc. are not hidden by the
+      // 0.55-opacity raster tiles.
+      //
+      // Strategy: move fills first (bottom), then lines, then circles/points (top).
       const fills = allIds.filter(id => id.includes('-fill'));
       const lines = allIds.filter(id => id.includes('-line') || id.includes('-casing'));
       const points = allIds.filter(id => id.includes('-point') || id.includes('-circle'));
       
+      // Move raster basemap to just above the background (i.e. the very bottom).
+      if (map.getLayer('osm') && map.getLayer('background')) {
+        try { map.moveLayer('osm', fills[0] || lines[0] || points[0]); } catch { /* ok */ }
+      }
+
+      // Now stack ORCA layers in order above the basemap.
       for (const id of [...fills, ...lines, ...points]) {
         if (map.getLayer(id)) {
           try { map.moveLayer(id); } catch { /* already topmost */ }
