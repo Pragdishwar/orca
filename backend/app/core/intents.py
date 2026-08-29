@@ -133,4 +133,10 @@ def answer_for_intent(intent: str, slots: Dict[str, Any],
                        "availability."),
             "status": "MOCKUP",
         }
+    if intent == "greeting":
+        return {
+            "kind": "greeting",
+            "answer": "Hello! I am the ORCA coastal safety advisor. I can help you check crossing conditions, route advisories, and fishing zones. What would you like to know?",
+            "status": "MOCKUP",
+        }
     return None
