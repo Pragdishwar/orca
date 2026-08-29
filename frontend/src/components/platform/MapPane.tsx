@@ -113,6 +113,7 @@ export default function MapPane() {
   const context = useOrcaStore((s) => s.context);
   const initGpsWatcher = useOrcaStore((s) => s.initGpsWatcher);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const hasPannedToUser = useRef(false);
 
   useEffect(() => {
     initGpsWatcher();
@@ -136,6 +137,11 @@ export default function MapPane() {
           .addTo(map);
       } else {
         userMarkerRef.current.setLngLat([context.user_lon, context.user_lat]);
+      }
+      
+      if (!hasPannedToUser.current) {
+        hasPannedToUser.current = true;
+        map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11, duration: 1500 });
       }
     }
   }, [context.user_lat, context.user_lon, ready]);
@@ -237,20 +243,23 @@ export default function MapPane() {
     if (!map) return;
     const coords: [number, number][] = [];
     
-    // Always include user location if available
-    const store = useOrcaStore.getState();
-    if (store.context.user_lat != null && store.context.user_lon != null) {
-      coords.push([store.context.user_lon, store.context.user_lat]);
-    }
-
     // Frame the layers relevant to the active query, or defaults if none
-    const relevantLayers = store.active?.layers?.length 
+    const relevantLayers = store.active 
       ? store.active.layers 
       : ['inlet', 'hazard_corridor', 'pfz'];
 
     for (const key of relevantLayers) {
       if (visible[key as LayerKey] && dataRef.current[key]) {
         collectCoords(dataRef.current[key], coords);
+      }
+    }
+    
+    // Only include user location if the query explicitly requested it, or if nothing else is visible.
+    // Otherwise, framing a user in Bangalore + the inlet in Kerala zooms out the map to show all of South India!
+    const store = useOrcaStore.getState();
+    if (store.context.user_lat != null && store.context.user_lon != null) {
+      if (store.active?.intent === 'location' || !coords.length) {
+        coords.push([store.context.user_lon, store.context.user_lat]);
       }
     }
 

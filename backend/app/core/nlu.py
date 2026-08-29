@@ -25,6 +25,7 @@ INTENT_LAYERS = {
     "productivity": ["inlet", "anomaly"],
     "coverage": ["inlet", "coverage_line"],
     "greeting": [],
+    "location": [],
 }
 
 _MALAYALAM = re.compile(r"[ഀ-ൿ]")
