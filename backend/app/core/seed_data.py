@@ -28,6 +28,8 @@ NAMED_GROUNDS: List[Dict[str, Any]] = [
      "centroid_lat": 8.6800, "centroid_lon": 76.7000, "radius_km": 5.0},
     {"ground_id": "G-VIZH", "local_name": "Vizhinjam Offshore",
      "centroid_lat": 8.3700, "centroid_lon": 76.9200, "radius_km": 9.0},
+    {"ground_id": "G-03", "local_name": "Vizhinjam South Reef", "centroid_lat": 8.32, "centroid_lon": 76.94, "radius_km": 2.5},
+    {"ground_id": "G-CH-01", "local_name": "Coromandel Coastal Shelf", "centroid_lat": 13.05, "centroid_lon": 80.45, "radius_km": 15.0},
 ]
 
 
@@ -57,6 +59,13 @@ ZONES: List[Dict[str, Any]] = [
     {"zone_id": "Z-SENS-02", "name": "Quilon Bank Trawl Ban Belt", "type": "SENSITIVE",
      "buffer_km": 3.0, "provenance": "LIVE_DATABASE",
      "geojson": _box(8.78, 76.20, 8.94, 76.42)},
+    # Chennai Zones
+    {"zone_id": "Z-REST-CH", "name": "Chennai Port Exclusion Zone", "type": "RESTRICTED",
+     "buffer_km": 2.0, "provenance": "LIVE_DATABASE",
+     "geojson": _box(13.08, 80.29, 13.12, 80.33)},
+    {"zone_id": "Z-MPA-CH", "name": "Pulicat Lake Marine Sanctuary", "type": "MPA",
+     "buffer_km": 3.0, "provenance": "LIVE_DATABASE",
+     "geojson": _box(13.38, 80.28, 13.45, 80.36)},
 ]
 
 # D-09: demo boat registry. threshold_bucket points at a D-10 hull class.
