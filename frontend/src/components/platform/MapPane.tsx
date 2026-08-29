@@ -39,10 +39,7 @@ const BASEMAP_STYLE: maplibregl.StyleSpecification = {
   sources: {
     osm: {
       type: 'raster',
-      // Standard OSM tiles: free, no API key, no usage gate. Labels follow the
-      // local `name` tag, which along this coast is Latin (Kollam, Varkala,
-      // Attingal). Non-Latin scripts only showed up when the view could drift
-      // as far as the Maldives, which `maxBounds` now prevents.
+      // Standard OSM tiles: free, no API key, no usage gate.
       tiles: [
         'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
         'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -55,7 +52,8 @@ const BASEMAP_STYLE: maplibregl.StyleSpecification = {
   },
   layers: [
     { id: 'background', type: 'background', paint: { 'background-color': '#cfe3f7' } },
-    { id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.55 } },
+    // NOTE: osm raster layer is NOT added here. It is added programmatically
+    // in draw() BEFORE any ORCA layers, guaranteeing it renders underneath.
   ],
 };
 
@@ -386,6 +384,14 @@ export default function MapPane() {
         if (!map.getLayer(spec.id)) map.addLayer(spec);
       };
 
+      // Add the raster basemap FIRST so it renders BELOW all ORCA layers.
+      // This was previously in BASEMAP_STYLE but MapLibre's style-defined layers
+      // always render above programmatically-added layers, hiding our overlays.
+      add({
+        id: 'osm', type: 'raster', source: 'osm',
+        paint: { 'raster-opacity': 0.65 },
+      } as any);
+
       add({
         id: 'grounds-fill', type: 'fill', source: 'grounds',
         paint: { 'fill-color': '#0ea5e9', 'fill-opacity': 0.12 },
@@ -484,28 +490,9 @@ export default function MapPane() {
 
       const allIds = TOGGLE_LAYERS.flatMap(([, ids]) => ids);
 
-      // Guarantee ORCA's layers sit ABOVE the raster basemap.
-      // The OSM raster tile layer ('osm') is part of BASEMAP_STYLE, and by default
-      // addLayer() appends new layers below it. We must explicitly move it underneath
-      // all ORCA layers so geofences, hazard corridors, etc. are not hidden by the
-      // 0.55-opacity raster tiles.
-      //
-      // Strategy: move fills first (bottom), then lines, then circles/points (top).
-      const fills = allIds.filter(id => id.includes('-fill'));
-      const lines = allIds.filter(id => id.includes('-line') || id.includes('-casing'));
-      const points = allIds.filter(id => id.includes('-point') || id.includes('-circle'));
-      
-      // Move raster basemap to just above the background (i.e. the very bottom).
-      if (map.getLayer('osm') && map.getLayer('background')) {
-        try { map.moveLayer('osm', fills[0] || lines[0] || points[0]); } catch { /* ok */ }
-      }
-
-      // Now stack ORCA layers in order above the basemap.
-      for (const id of [...fills, ...lines, ...points]) {
-        if (map.getLayer(id)) {
-          try { map.moveLayer(id); } catch { /* already topmost */ }
-        }
-      }
+      // No moveLayer hacks needed: the osm raster is now added programmatically
+      // BEFORE all ORCA layers in add() above, so the rendering order is correct
+      // by construction: background → osm → fills → lines → points.
       map.triggerRepaint();
 
       setDrawn(allIds.filter((id) => !!map.getLayer(id)).length);
