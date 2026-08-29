@@ -110,6 +110,34 @@ export default function MapPane() {
   const active = useOrcaStore((s) => s.active);
   const personas = useOrcaStore((s) => s.personas);
   const persona = useOrcaStore((s) => s.persona);
+  const context = useOrcaStore((s) => s.context);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || !ready) return;
+    const map = mapRef.current;
+    if (context.user_lat != null && context.user_lon != null) {
+      if (!userMarkerRef.current) {
+        // Create a custom element for the marker to style it nicely
+        const el = document.createElement('div');
+        el.className = 'flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 shadow-[0_0_0_2px_white]';
+        const inner = document.createElement('div');
+        inner.className = 'h-1.5 w-1.5 rounded-full bg-white animate-pulse';
+        el.appendChild(inner);
+
+        userMarkerRef.current = new maplibregl.Marker({ element: el })
+          .setLngLat([context.user_lon, context.user_lat])
+          .setPopup(new maplibregl.Popup({ offset: 10 }).setText('You are here'))
+          .addTo(map);
+        
+        // Pan to the user's location
+        map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11, duration: 1000 });
+      } else {
+        userMarkerRef.current.setLngLat([context.user_lon, context.user_lat]);
+        map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11, duration: 1000 });
+      }
+    }
+  }, [context.user_lat, context.user_lon, ready]);
 
   // FR-21: the backend reports which layers the answer actually used.
   useEffect(() => {

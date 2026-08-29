@@ -48,6 +48,8 @@ def detect_language(text: str) -> str:
 def _detect_intent(low: str, raw: str) -> str:
     if any(w in low.split() for w in ("hi", "hello", "hey", "greetings", "namaste", "vanakkam", "namaskaram", "ഹലോ", "നമസ്കാരം", "வணக்கம்")):
         return "greeting"
+    if any(w in low for w in ("where am i", "my location", "where are we", "gps")):
+        return "location"
     if any(k in raw for k in _ML_SAFE) or any(k in raw for k in _TA_SAFE):
         return "crossing_safety"
     if any(w in low for w in ("pfz", "fishing zone", "fish zone", "where to fish", "shoal")):

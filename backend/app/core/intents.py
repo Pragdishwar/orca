@@ -132,6 +132,17 @@ def answer_for_intent(intent: str, slots: Dict[str, Any],
         return geofence_check(ground, user_lat=user_lat, user_lon=user_lon)
     if intent == "route_advisory":
         return route_advisory(slots.get("ground_id") or "G-QUILON", cruise_knots)
+    if intent == "location":
+        if user_lat is not None and user_lon is not None:
+            return {
+                "kind": "location",
+                "answer": f"I have located your device at GPS coordinates {user_lat:.4f}°, {user_lon:.4f}°. You can see your exact position marked with a blue pulsing pin on the map."
+            }
+        else:
+            return {
+                "kind": "location",
+                "answer": "I couldn't detect your GPS location. Please ensure location services are enabled and you have granted permission in your browser."
+            }
     if intent == "productivity":
         return {
             "kind": "productivity",
