@@ -113,12 +113,14 @@ export default function MapPane() {
   const context = useOrcaStore((s) => s.context);
   const initGpsWatcher = useOrcaStore((s) => s.initGpsWatcher);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const pfzMarkersRef = useRef<maplibregl.Marker[]>([]);
   const hasPannedToUser = useRef(false);
 
   useEffect(() => {
     initGpsWatcher();
   }, [initGpsWatcher]);
 
+  // Handle GPS Marker
   useEffect(() => {
     if (!mapRef.current || !ready) return;
     const map = mapRef.current;
@@ -141,10 +143,47 @@ export default function MapPane() {
       
       if (!hasPannedToUser.current) {
         hasPannedToUser.current = true;
-        map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11, duration: 1500 });
+        if (active?.intent === 'location') {
+          map.flyTo({ center: [context.user_lon, context.user_lat], zoom: 11 });
+        }
       }
     }
-  }, [context.user_lat, context.user_lon, ready]);
+  }, [context.user_lat, context.user_lon, ready, active]);
+
+  // Handle PFZ Highlights
+  useEffect(() => {
+    if (!mapRef.current || !ready) return;
+    const map = mapRef.current;
+    
+    // Clear old markers
+    pfzMarkersRef.current.forEach(m => m.remove());
+    pfzMarkersRef.current = [];
+
+    if (active?.intent_result?.kind === 'nearest_pfz' && active.intent_result.points) {
+      active.intent_result.points.forEach((pfz: any, idx: number) => {
+        const el = document.createElement('div');
+        // Top PFZ gets a bouncing bigger marker, others get standard
+        const isTop = idx === 0;
+        el.className = `flex items-center justify-center rounded-full bg-emerald-600 shadow-md border-2 border-white text-white font-bold text-[10px] ${isTop ? 'h-7 w-7 animate-bounce' : 'h-5 w-5'}`;
+        el.innerHTML = `${idx + 1}`;
+        
+        const popupHTML = `
+          <div class="p-1">
+            <strong class="text-emerald-700">${pfz.pfz_id}</strong><br/>
+            ${pfz.distance_km} km away<br/>
+            ${pfz.depth_m} m depth
+          </div>
+        `;
+        
+        const m = new maplibregl.Marker({ element: el })
+          .setLngLat([pfz.lon, pfz.lat])
+          .setPopup(new maplibregl.Popup({ offset: 10 }).setHTML(popupHTML))
+          .addTo(map);
+        
+        pfzMarkersRef.current.push(m);
+      });
+    }
+  }, [active, ready]);
 
   // FR-21: the backend reports which layers the answer actually used.
   useEffect(() => {
