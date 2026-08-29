@@ -230,14 +230,36 @@ export default function MapPane() {
     map.fitBounds(b, { padding: 80, maxZoom: 12, duration: 700 });
   }, []);
 
-  /** Frame every layer currently switched on. */
+  /** Frame layers relevant to the current query, plus GPS. */
   const fitToData = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
     const coords: [number, number][] = [];
-    for (const [key, on] of Object.entries(visible)) {
-      if (on && dataRef.current[key]) collectCoords(dataRef.current[key], coords);
+    
+    // Always include user location if available
+    const store = useOrcaStore.getState();
+    if (store.context.user_lat != null && store.context.user_lon != null) {
+      coords.push([store.context.user_lon, store.context.user_lat]);
     }
+
+    // Frame the layers relevant to the active query, or defaults if none
+    const relevantLayers = store.active?.layers?.length 
+      ? store.active.layers 
+      : ['inlet', 'hazard_corridor', 'pfz'];
+
+    for (const key of relevantLayers) {
+      if (visible[key as LayerKey] && dataRef.current[key]) {
+        collectCoords(dataRef.current[key], coords);
+      }
+    }
+
+    // Fallback if nothing relevant is visible
+    if (!coords.length) {
+      for (const [key, on] of Object.entries(visible)) {
+        if (on && dataRef.current[key]) collectCoords(dataRef.current[key], coords);
+      }
+    }
+
     if (!coords.length) return;
     const b = coords.reduce(
       (acc, c) => acc.extend(c),
@@ -420,11 +442,11 @@ export default function MapPane() {
       // Guarantee ORCA's layers sit above the basemap. addLayer() appends, but
       // any re-add or style event can leave one underneath the raster, where a
       // 0.75-opacity tile over water hides it completely.
-      // for (const id of allIds) {
-      //   if (map.getLayer(id)) {
-      //     try { map.moveLayer(id); } catch { /* already topmost */ }
-      //   }
-      // }
+      for (const id of allIds) {
+        if (map.getLayer(id)) {
+          try { map.moveLayer(id); } catch { /* already topmost */ }
+        }
+      }
       map.triggerRepaint();
 
       setDrawn(allIds.filter((id) => !!map.getLayer(id)).length);

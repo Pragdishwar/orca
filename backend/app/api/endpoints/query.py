@@ -35,6 +35,8 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
     if request.user_lat is not None and request.user_lon is not None:
         context["user_lat"] = request.user_lat
         context["user_lon"] = request.user_lon
+    if request.gps_error is not None:
+        context["gps_error"] = request.gps_error
 
     # Discovery runs against the live registry before the graph, so the graph
     # itself stays serialisable and the decision appears as its own trace node.

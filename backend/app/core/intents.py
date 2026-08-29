@@ -139,9 +139,11 @@ def answer_for_intent(intent: str, slots: Dict[str, Any],
                 "answer": f"I have located your device at GPS coordinates {user_lat:.4f}°, {user_lon:.4f}°. You can see your exact position marked with a blue pulsing pin on the map."
             }
         else:
+            gps_error = slots.get("gps_error")
+            reason = f" ({gps_error})" if gps_error else ""
             return {
                 "kind": "location",
-                "answer": "I couldn't detect your GPS location. Please ensure location services are enabled and you have granted permission in your browser."
+                "answer": f"I couldn't detect your GPS location{reason}. Please ensure location services are enabled and you have granted permission in your browser."
             }
     if intent == "productivity":
         return {

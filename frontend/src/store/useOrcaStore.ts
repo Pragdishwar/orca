@@ -238,6 +238,7 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
 
     let user_lat: number | undefined;
     let user_lon: number | undefined;
+    let gps_error: string | undefined;
     try {
       if ('geolocation' in navigator) {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -245,8 +246,12 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
         });
         user_lat = pos.coords.latitude;
         user_lon = pos.coords.longitude;
+      } else {
+        gps_error = "Geolocation not supported.";
       }
-    } catch (e) { /* ignore */ }
+    } catch (e: any) {
+      gps_error = e.message || "GPS request failed.";
+    }
 
     try {
       const messageId = crypto.randomUUID();
@@ -258,6 +263,7 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
           force_failure: opts?.forceFailure ?? false,
           user_lat,
           user_lon,
+          gps_error,
         });
 
         set((s) => ({

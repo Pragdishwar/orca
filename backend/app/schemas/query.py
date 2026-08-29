@@ -12,6 +12,7 @@ class QueryRequest(BaseModel):
     stream: bool = False
     user_lat: Optional[float] = None
     user_lon: Optional[float] = None
+    gps_error: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
