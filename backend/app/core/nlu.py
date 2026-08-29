@@ -138,6 +138,9 @@ def parse_utterance(text: str, context: Dict[str, Any],
         "ground_id": context.get("ground_id") or "",
         "departure_hour": context.get("departure_hour") or 6,
         "return_hour": context.get("return_hour") or 18,
+        "user_lat": context.get("user_lat"),
+        "user_lon": context.get("user_lon"),
+        "gps_error": context.get("gps_error"),
     }
     updated: List[str] = []
 
