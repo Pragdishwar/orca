@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.app.core.dataset import INLET, build_record
 from backend.app.core.geo import bearing_deg, haversine_km, zone_status
-from backend.app.core.seed_data import NAMED_GROUNDS, ZONES, pfz_points
+from backend.app.core.seed_data import named_grounds, geofence_zones, pfz_points
 
 router = APIRouter()
 
@@ -22,7 +22,8 @@ PLANNING_CAVEAT = ("Planning-ashore guidance only. This is not a navigation inst
 
 
 def _ground(ground_id: str) -> Dict[str, Any]:
-    for g in NAMED_GROUNDS:
+    grounds = named_grounds()
+    for g in grounds:
         if g["ground_id"] == ground_id or g["local_name"].lower() == ground_id.lower():
             return g
     raise HTTPException(status_code=404, detail=f"Unknown ground '{ground_id}'")
@@ -44,7 +45,7 @@ async def check_geofence(ground_id: str) -> Dict[str, Any]:
     """Point-in-polygon plus buffer against every zone layer (FR-23)."""
     g = _ground(ground_id)
     zones = []
-    for z in ZONES:
+    for z in geofence_zones():
         status, dist = zone_status(g["centroid_lat"], g["centroid_lon"],
                                    z["geojson"], z["buffer_km"])
         # A ground is an area, not a point: treat its radius as reach.

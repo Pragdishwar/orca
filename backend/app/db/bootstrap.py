@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 
 from backend.app.core import config_store
-from backend.app.core.seed_data import BOATS, NAMED_GROUNDS, ZONES
+from backend.app.core.seed_data import BOATS, named_grounds, geofence_zones
 from backend.app.db.session import Base, async_session, engine
 from backend.app.models import (  # noqa: F401 - imported so metadata is populated
     Advisory, Alert, Boat, Ground, HullThreshold, Incident, OfficialAdvisory,
@@ -70,12 +70,12 @@ async def seed() -> None:
             logger.info("Seeded demo boats (D-09).")
 
         if await _count(session, Ground) == 0:
-            for row in NAMED_GROUNDS:
+            for row in named_grounds():
                 session.add(Ground(**row))
-            logger.info("Seeded named grounds (D-07).")
+            logger.info("Seeded fishing grounds (D-07).")
 
         if await _count(session, Zone) == 0:
-            for row in ZONES:
+            for row in geofence_zones():
                 session.add(Zone(**row))
             logger.info("Seeded geofence zones (D-05).")
 

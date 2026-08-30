@@ -284,6 +284,7 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
           user_lat,
           user_lon,
           gps_error,
+          boat_id: activeBoat?.boat_id,
         });
 
         set((s) => ({

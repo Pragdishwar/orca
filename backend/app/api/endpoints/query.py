@@ -38,6 +38,18 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
     if request.gps_error is not None:
         context["gps_error"] = request.gps_error
 
+    if request.boat_id:
+        from backend.app.models.boat import Boat
+        boat_res = await db.execute(select(Boat).filter(Boat.boat_id == request.boat_id))
+        boat = boat_res.scalars().first()
+        if boat and "user_lat" not in context:
+            from backend.app.core.seed_data import named_grounds
+            for g in named_grounds():
+                if g["local_name"].lower() == boat.home_harbour.lower() or g["ground_id"] == boat.home_harbour:
+                    context["user_lat"] = g["centroid_lat"]
+                    context["user_lon"] = g["centroid_lon"]
+                    break
+
     # Discovery runs against the live registry before the graph, so the graph
     # itself stays serialisable and the decision appears as its own trace node.
     agent = DatasetDiscoveryAgent(session=db)
@@ -100,7 +112,7 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
     ))
 
     advisory = Advisory(
-        boat_id=None,
+        boat_id=request.boat_id,
         inlet_id=computed["inlet_id"],
         verdict=computed["verdict"],
         index_value=computed["index_value"],

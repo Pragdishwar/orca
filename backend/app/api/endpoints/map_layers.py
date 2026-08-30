@@ -11,8 +11,8 @@ from fastapi import APIRouter, Query
 from backend.app.core.dataset import INLET
 from backend.app.core.geo import circle_ring
 from backend.app.core.seed_data import (
-    NAMED_GROUNDS,
-    ZONES,
+    named_grounds,
+    geofence_zones,
     get_inlet,
     ground_rings,
     inlet_feature,

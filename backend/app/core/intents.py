@@ -12,19 +12,20 @@ from typing import Any, Dict, List, Optional
 
 from backend.app.core.dataset import INLET
 from backend.app.core.geo import bearing_deg, haversine_km, zone_status
-from backend.app.core.seed_data import NAMED_GROUNDS, ZONES, pfz_points
+from backend.app.core.seed_data import named_grounds, geofence_zones, pfz_points
 
 DEFAULT_GROUND = "G-MUTH-NEAR"
 
 
 def resolve_ground(ground_id: str) -> Dict[str, Any]:
-    for g in NAMED_GROUNDS:
+    grounds = named_grounds()
+    for g in grounds:
         if g["ground_id"] == ground_id or g["local_name"].lower() == str(ground_id).lower():
             return g
-    for g in NAMED_GROUNDS:
+    for g in grounds:
         if g["ground_id"] == DEFAULT_GROUND:
             return g
-    return NAMED_GROUNDS[0]
+    return grounds[0]
 
 
 async def nearest_pfz(ground_id: str, limit: int = 3, user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
@@ -73,10 +74,10 @@ def geofence_check(ground_id: str, user_lat: Optional[float] = None, user_lon: O
     g = resolve_ground(ground_id)
     lat = user_lat if user_lat is not None else g["centroid_lat"]
     lon = user_lon if user_lon is not None else g["centroid_lon"]
-    origin_name = "Your location" if user_lat is not None else g["local_name"]
+    origin_name = "your current location" if user_lat is not None else g["local_name"]
 
     zones = []
-    for z in ZONES:
+    for z in geofence_zones():
         status, dist = zone_status(lat, lon, z["geojson"], z["buffer_km"])
         if status == "CLEAR" and dist <= g["radius_km"]:
             status = "NEAR"

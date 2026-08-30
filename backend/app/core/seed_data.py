@@ -217,7 +217,7 @@ def ground_rings() -> List[Dict[str, Any]]:
                        "radius_km": g["radius_km"], "provenance": "LIVE_DATABASE"},
         "geometry": {"type": "Polygon", "coordinates": [
             circle_ring(g["centroid_lat"], g["centroid_lon"], g["radius_km"])]},
-    } for g in NAMED_GROUNDS]
+    } for g in named_grounds()]
 
 
 def inlet_feature(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:

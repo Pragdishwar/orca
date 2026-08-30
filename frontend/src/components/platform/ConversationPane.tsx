@@ -253,7 +253,7 @@ export default function ConversationPane() {
         )}
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-3">
+      <div className="flex-1 space-y-3 overflow-y-scroll bg-slate-50 p-3">
         {chatHistory.length === 0 && !isQuerying && (
           <div className="space-y-3">
             <p className="pt-4 text-center text-sm text-slate-500">

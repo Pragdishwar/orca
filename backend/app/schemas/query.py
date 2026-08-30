@@ -13,6 +13,7 @@ class QueryRequest(BaseModel):
     user_lat: Optional[float] = None
     user_lon: Optional[float] = None
     gps_error: Optional[str] = None
+    boat_id: Optional[str] = None
 
 
 class QueryResponse(BaseModel):

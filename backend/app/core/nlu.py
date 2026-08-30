@@ -184,8 +184,8 @@ def parse_utterance(text: str, context: Dict[str, Any],
 
 
 def _known_grounds() -> List[str]:
-    from backend.app.core.seed_data import NAMED_GROUNDS
-    return [g["local_name"] for g in NAMED_GROUNDS]
+    from backend.app.core.seed_data import named_grounds
+    return [g["local_name"] for g in named_grounds()]
 
 
 def hull_label(hull_class: str) -> str:
