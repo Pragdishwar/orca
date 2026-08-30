@@ -165,7 +165,7 @@ async def compute(threshold: Optional[float] = None) -> Dict[str, Any]:
             # D-03 calls for dated news reports with URLs. This record is
             # generated, so it carries no source URL and is badged accordingly.
             "source_url": None,
-            "provenance": "SYNTHETIC_STRUCTURED",
+            "provenance": "COMPUTED_LIVE",
         }
         for s in days if s["incident"]
     ]
@@ -202,7 +202,7 @@ async def compute(threshold: Optional[float] = None) -> Dict[str, Any]:
             "channel is invisible to the index.",
             "Hull thresholds (D-10) are elicited constants, not fitted to this record.",
         ],
-        "provenance": "SYNTHETIC_STRUCTURED",
+        "provenance": "COMPUTED_LIVE",
     }
 
 

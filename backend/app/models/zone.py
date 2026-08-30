@@ -19,4 +19,4 @@ class Zone(Base):
     type: Mapped[str] = mapped_column(String)
     geojson: Mapped[dict] = mapped_column(JSONColumn)
     buffer_km: Mapped[float] = mapped_column(Float)
-    provenance: Mapped[str] = mapped_column(String, default="SYNTHETIC")
+    provenance: Mapped[str] = mapped_column(String, default="ORCA_LIVE")

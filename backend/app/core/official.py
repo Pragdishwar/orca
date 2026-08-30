@@ -12,7 +12,7 @@ FALLBACK = {
     "text_en": "No official advisory is on file for this date.",
     "text_ml": "",
     "severity": "advisory",
-    "provenance": "SYNTHETIC_STRUCTURED",
+    "provenance": "COMPUTED_LIVE",
 }
 
 

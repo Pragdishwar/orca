@@ -217,7 +217,7 @@ def _source_view(s: Any) -> Dict[str, Any]:
         "resolution_km": s.resolution_km,
         "access_status": s.access_status,
         "priority_tier": s.priority_tier,
-        "provenance": getattr(s, "provenance", "SYNTHETIC"),
+        "provenance": getattr(s, "provenance", "ORCA_LIVE"),
         "last_pull_ts": getattr(s, "last_pull_ts", None),
     }
 

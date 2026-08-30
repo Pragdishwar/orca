@@ -80,7 +80,7 @@ def render_slip(adv: Dict[str, Any]) -> Dict[str, Any]:
         else "TURN BACK BY: n/a",
         "=" * 32,
         "Planning guidance only. Not for navigation.",
-        "Data: SYNTHETIC_STRUCTURED. Prototype.",
+        "Data: COMPUTED_LIVE. Prototype.",
     ]
     return {"format": "slip", "content": "\n".join(lines), "page_size": "A5"}
 

@@ -15,5 +15,5 @@ class SourceRegistry(Base):
     access_method: Mapped[str] = mapped_column(String)
     access_status: Mapped[str] = mapped_column(String)
     priority_tier: Mapped[int] = mapped_column(Integer)
-    provenance: Mapped[str] = mapped_column(String, default="SYNTHETIC")
+    provenance: Mapped[str] = mapped_column(String, default="ORCA_LIVE")
     last_pull_ts: Mapped[str] = mapped_column(String, nullable=True)

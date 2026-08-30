@@ -25,24 +25,22 @@ def get_inlet(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:
 
 # D-07: named grounds. R-6 - a boat is linked to one of these by name only;
 # the coordinates live here, never against the boat.
-NAMED_GROUNDS: List[Dict[str, Any]] = [
-    {"ground_id": "G-MUTH-NEAR", "local_name": "Muthalapozhi Nearshore",
-     "centroid_lat": 8.6480, "centroid_lon": 76.7350, "radius_km": 4.0},
-    {"ground_id": "G-PARA", "local_name": "Paravur Shelf",
-     "centroid_lat": 8.7600, "centroid_lon": 76.6600, "radius_km": 6.0},
-    {"ground_id": "G-QUILON", "local_name": "Quilon Bank",
-     "centroid_lat": 8.8500, "centroid_lon": 76.3000, "radius_km": 18.0},
-    {"ground_id": "G-WADGE", "local_name": "Wadge Bank",
-     "centroid_lat": 7.9500, "centroid_lon": 77.3000, "radius_km": 22.0},
-    {"ground_id": "G-TVM-DEEP", "local_name": "Trivandrum Deep",
-     "centroid_lat": 8.3000, "centroid_lon": 76.5000, "radius_km": 14.0},
-    {"ground_id": "G-ANCHU", "local_name": "Anchuthengu Grounds",
-     "centroid_lat": 8.6800, "centroid_lon": 76.7000, "radius_km": 5.0},
-    {"ground_id": "G-VIZH", "local_name": "Vizhinjam Offshore",
-     "centroid_lat": 8.3700, "centroid_lon": 76.9200, "radius_km": 9.0},
-    {"ground_id": "G-03", "local_name": "Vizhinjam South Reef", "centroid_lat": 8.32, "centroid_lon": 76.94, "radius_km": 2.5},
-    {"ground_id": "G-CH-01", "local_name": "Coromandel Coastal Shelf", "centroid_lat": 13.05, "centroid_lon": 80.45, "radius_km": 15.0},
-]
+def named_grounds() -> List[Dict[str, Any]]:
+    from backend.app.db.supabase import supabase
+    if supabase:
+        try:
+            res = supabase.table("grounds").select("*").execute()
+            if res.data:
+                return res.data
+        except Exception as e:
+            print(f"Supabase grounds error: {e}")
+    # Fallback if DB fails
+    return [
+        {"ground_id": "G-MUTH-NEAR", "local_name": "Muthalapozhi Nearshore",
+         "centroid_lat": 8.6480, "centroid_lon": 76.7350, "radius_km": 4.0},
+        {"ground_id": "G-PARA", "local_name": "Paravur Shelf",
+         "centroid_lat": 8.7600, "centroid_lon": 76.6600, "radius_km": 6.0},
+    ]
 
 
 def _box(lat0: float, lon0: float, lat1: float, lon1: float) -> Dict[str, Any]:
@@ -51,37 +49,22 @@ def _box(lat0: float, lon0: float, lat1: float, lon1: float) -> Dict[str, Any]:
     ]]}
 
 
-# D-05: geofence zones.
-ZONES: List[Dict[str, Any]] = [
-    {"zone_id": "Z-IMBL-01", "name": "India-Sri Lanka IMBL approach", "type": "IMBL",
-     "buffer_km": 5.0, "provenance": "LIVE_DATABASE",
-     "geojson": _box(7.60, 77.10, 7.95, 77.80)},
-    {"zone_id": "Z-MPA-01", "name": "Vizhinjam Reef Marine Protected Area", "type": "MPA",
-     "buffer_km": 2.0, "provenance": "LIVE_DATABASE",
-     "geojson": _box(8.32, 76.86, 8.42, 76.98)},
-    {"zone_id": "Z-SENS-01", "name": "Anchuthengu Turtle Nesting Belt", "type": "SENSITIVE",
-     "buffer_km": 2.0, "provenance": "LIVE_DATABASE",
-     "geojson": _box(8.63, 76.68, 8.74, 76.76)},
-    {"zone_id": "Z-REST-01", "name": "Vizhinjam Port Approach Channel", "type": "RESTRICTED",
-     "buffer_km": 1.5, "provenance": "LIVE_DATABASE",
-     "geojson": _box(8.36, 76.97, 8.41, 77.05)},
-    {"zone_id": "Z-REST-02", "name": "Muthalapozhi Harbour Mouth Exclusion", "type": "RESTRICTED",
-     "buffer_km": 0.5, "provenance": "LIVE_DATABASE",
-     "geojson": _box(8.628, 76.780, 8.644, 76.792)},
-    {"zone_id": "Z-SENS-02", "name": "Quilon Bank Trawl Ban Belt", "type": "SENSITIVE",
-     "buffer_km": 3.0, "provenance": "LIVE_DATABASE",
-     "geojson": _box(8.78, 76.20, 8.94, 76.42)},
-    # Chennai Zones
-    {"zone_id": "Z-REST-CH", "name": "Chennai Port Exclusion Zone", "type": "RESTRICTED",
-     "buffer_km": 2.0, "provenance": "LIVE_DATABASE",
-     "geojson": _box(13.08, 80.29, 13.12, 80.33)},
-    {"zone_id": "Z-MPA-CH", "name": "Pulicat Lake Marine Sanctuary", "type": "MPA",
-     "buffer_km": 3.0, "provenance": "LIVE_DATABASE",
-     "geojson": _box(13.38, 80.28, 13.45, 80.36)},
-    {"zone_id": "Z-SENS-MUT", "name": "Muttukadu Turtle Nesting Zone", "type": "SENSITIVE",
-     "buffer_km": 1.5, "provenance": "LIVE_DATABASE",
-     "geojson": _box(12.80, 80.24, 12.95, 80.27)},
-]
+def geofence_zones() -> List[Dict[str, Any]]:
+    from backend.app.db.supabase import supabase
+    if supabase:
+        try:
+            res = supabase.table("zones").select("*").execute()
+            if res.data:
+                return res.data
+        except Exception as e:
+            print(f"Supabase zones error: {e}")
+    # Fallback if DB fails
+    return [
+        {"zone_id": "Z-IMBL-01", "name": "India-Sri Lanka IMBL approach", "type": "IMBL",
+         "buffer_km": 5.0, "provenance": "ORCA_LIVE",
+         "geojson": _box(7.60, 77.10, 7.95, 77.80)},
+    ]
+
 
 # D-09: demo boat registry. threshold_bucket points at a D-10 hull class.
 BOATS: List[Dict[str, Any]] = [

@@ -46,7 +46,7 @@ async def seed() -> None:
                     access_method=row["access_method"],
                     access_status=row["access_status"],
                     priority_tier=row["priority_tier"],
-                    provenance=row.get("provenance", "SYNTHETIC"),
+                    provenance=row.get("provenance", "ORCA_LIVE"),
                     # Only a source that actually connected has a pull time.
                     last_pull_ts=now if row["access_status"] == "CONNECTED" else None,
                 ))

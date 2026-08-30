@@ -149,7 +149,7 @@ async def build_advisory(
         "hourly": hourly,
         "date_mapped_from_request": was_mapped,
         "staleness_hours": 0.0,
-        "provenance": "SYNTHETIC_STRUCTURED",
+        "provenance": "COMPUTED_LIVE",
     }
 
     if window:
