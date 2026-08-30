@@ -384,29 +384,26 @@ export default function MapPane() {
         if (!map.getLayer(spec.id)) map.addLayer(spec);
       };
 
-      // Add the raster basemap FIRST so it renders BELOW all ORCA layers.
-      // This was previously in BASEMAP_STYLE but MapLibre's style-defined layers
-      // always render above programmatically-added layers, hiding our overlays.
-      add({
-        id: 'osm', type: 'raster', source: 'osm',
-        paint: { 'raster-opacity': 0.65 },
-      } as any);
+      // add({
+      //   id: 'osm', type: 'raster', source: 'osm',
+      //   paint: { 'raster-opacity': 0.65 },
+      // } as any);
 
       add({
         id: 'grounds-fill', type: 'fill', source: 'grounds',
-        paint: { 'fill-color': '#0ea5e9', 'fill-opacity': 0.4 },
+        paint: { 'fill-color': '#0ea5e9', 'fill-opacity': 0.12 },
       });
       add({
         id: 'grounds-line', type: 'line', source: 'grounds',
-        paint: { 'line-color': '#0284c7', 'line-width': 3, 'line-dasharray': [2, 2] },
+        paint: { 'line-color': '#0284c7', 'line-width': 1, 'line-dasharray': [2, 2] },
       });
       add({
         id: 'geofences-fill', type: 'fill', source: 'geofences',
-        paint: { 'fill-color': '#ff0000', 'fill-opacity': 0.5 },
+        paint: { 'fill-color': ['get', 'colour'], 'fill-opacity': 0.35 },
       });
       add({
         id: 'geofences-line', type: 'line', source: 'geofences',
-        paint: { 'line-color': '#ff0000', 'line-width': 4 },
+        paint: { 'line-color': ['get', 'colour'], 'line-width': 3 },
       });
       add({
         id: 'hazard_corridor-fill', type: 'fill', source: 'hazard_corridor',
@@ -520,6 +517,8 @@ export default function MapPane() {
         // Also on the console, so it can be read without the panel in the way.
         // eslint-disable-next-line no-console
         console.table(rows);
+        // eslint-disable-next-line no-console
+        console.log("MapLibre layer order:", map.getStyle()?.layers.map(l => l.id));
       }, 300);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Map data unavailable');
