@@ -37,8 +37,9 @@ def resolve_record_datetime(dt: datetime) -> Tuple[datetime, bool]:
     return dt, False
 
 
-def hourly_forecast(start: datetime, end: datetime) -> List[Dict[str, Any]]:
+async def hourly_forecast(start: datetime, end: datetime, lat: float = INLET["lat"], lon: float = INLET["lon"]) -> List[Dict[str, Any]]:
     """Analysis rows shaped for `compute_return_window_and_turnback`."""
+    rows = await record_window(start, end, lat, lon)
     return [
         {
             "timestamp": row["ts"],
@@ -48,7 +49,7 @@ def hourly_forecast(start: datetime, end: datetime) -> List[Dict[str, Any]]:
             "lightning_flag": row["lightning_flag"],
             "cyclone_flag": row["cyclone_flag"],
         }
-        for row in record_window(start, end)
+        for row in rows
     ]
 
 
@@ -111,7 +112,7 @@ async def build_advisory(
     from backend.app.core.hazard_engine import compute_return_window_and_turnback
 
     window, turn_back = compute_return_window_and_turnback(
-        hourly_forecast(departure, deadline),
+        await hourly_forecast(departure, deadline, lat, lon),
         departure,
         deadline,
         boat_speed_knots=band.cruise_knots,
