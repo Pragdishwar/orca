@@ -11,6 +11,18 @@ from typing import Any, Dict, List
 from backend.app.core.dataset import INLET
 from backend.app.core.geo import circle_ring
 
+def get_inlet(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:
+    if user_lat is None or user_lon is None:
+        return INLET
+    return {
+        "inlet_id": "dynamic_local",
+        "name": "Local Coast",
+        "lat": user_lat,
+        "lon": user_lon,
+        "channel_bearing_deg": 90.0,
+        "mouth_width_m": 110.0,
+    }
+
 # D-07: named grounds. R-6 - a boat is linked to one of these by name only;
 # the coordinates live here, never against the boat.
 NAMED_GROUNDS: List[Dict[str, Any]] = [
@@ -209,11 +221,12 @@ def ground_rings() -> List[Dict[str, Any]]:
     } for g in NAMED_GROUNDS]
 
 
-def inlet_feature() -> Dict[str, Any]:
+def inlet_feature(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:
     """D-04: the inlet itself, plus its channel axis, as map features."""
     import math
-    lat, lon = INLET["lat"], INLET["lon"]
-    bearing = math.radians(INLET["channel_bearing_deg"])
+    inlet = get_inlet(user_lat, user_lon)
+    lat, lon = inlet["lat"], inlet["lon"]
+    bearing = math.radians(inlet["channel_bearing_deg"])
     reach_km = 3.0
     dlat = (reach_km / 110.574) * math.cos(bearing)
     dlon = (reach_km / (111.320 * math.cos(math.radians(lat)))) * math.sin(bearing)
@@ -221,11 +234,11 @@ def inlet_feature() -> Dict[str, Any]:
         "type": "FeatureCollection",
         "features": [
             {"type": "Feature",
-             "properties": {"kind": "inlet", **{k: v for k, v in INLET.items()}},
+             "properties": {"kind": "inlet", **{k: v for k, v in inlet.items()}},
              "geometry": {"type": "Point", "coordinates": [lon, lat]}},
             {"type": "Feature",
              "properties": {"kind": "channel_axis",
-                            "bearing_deg": INLET["channel_bearing_deg"]},
+                            "bearing_deg": inlet["channel_bearing_deg"]},
              "geometry": {"type": "LineString", "coordinates": [
                  [round(lon, 6), round(lat, 6)],
                  [round(lon + dlon, 6), round(lat + dlat, 6)]]}},

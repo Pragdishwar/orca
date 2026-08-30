@@ -13,6 +13,7 @@ from backend.app.core.geo import circle_ring
 from backend.app.core.seed_data import (
     NAMED_GROUNDS,
     ZONES,
+    get_inlet,
     ground_rings,
     inlet_feature,
     pfz_points,
@@ -36,22 +37,27 @@ async def get_layers(
     user_lon: Optional[float] = Query(None),
 ) -> Dict[str, Any]:
     return {
-        "inlet": inlet_feature(),
-        "hazard_corridor": _hazard_corridor(verdict, index_value),
+        "inlet": inlet_feature(user_lat, user_lon),
+        "hazard_corridor": _hazard_corridor(verdict, index_value, user_lat, user_lon),
         "pfz": _pfz_layer(user_lat, user_lon),
         "geofences": _zone_layer(),
         "grounds": {"type": "FeatureCollection", "features": ground_rings()},
-        "coverage_line": _coverage_line(),
-        "centre": [INLET["lon"], INLET["lat"]],
+        "coverage_line": _coverage_line(user_lat, user_lon),
+        "centre": [
+            get_inlet(user_lat, user_lon)["lon"],
+            get_inlet(user_lat, user_lon)["lat"]
+        ],
         "provenance": "SYNTHETIC",
     }
 
 
-def _hazard_corridor(verdict: Optional[str], index_value: float) -> Dict[str, Any]:
+def _hazard_corridor(verdict: Optional[str], index_value: float, user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:
     """The approach corridor across the bar, coloured by the active verdict."""
     import math
-    lat, lon = INLET["lat"], INLET["lon"]
-    bearing = math.radians(INLET["channel_bearing_deg"])
+    from backend.app.core.seed_data import get_inlet
+    inlet = get_inlet(user_lat, user_lon)
+    lat, lon = inlet["lat"], inlet["lon"]
+    bearing = math.radians(inlet["channel_bearing_deg"])
     perp = bearing + math.pi / 2
     reach_km, half_width_km = 4.0, 0.55
 
@@ -97,12 +103,13 @@ def _zone_layer() -> Dict[str, Any]:
     } for z in ZONES]}
 
 
-def _coverage_line() -> Dict[str, Any]:
+def _coverage_line(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:
     """Where mobile coverage ends - the reason offline compile exists at all."""
     import math
+    inlet = get_inlet(user_lat, user_lon)
     features = []
     for km, label in ((15.0, "Approximate mobile coverage limit"),):
-        ring = circle_ring(INLET["lat"], INLET["lon"], km, points=64)
+        ring = circle_ring(inlet["lat"], inlet["lon"], km, points=64)
         features.append({
             "type": "Feature",
             "properties": {"kind": "coverage_line", "label": label, "radius_km": km,
