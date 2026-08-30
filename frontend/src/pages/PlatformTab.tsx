@@ -60,10 +60,9 @@ function HullStrip() {
 
 export default function PlatformTab() {
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col gap-3">
       <HullStrip />
-      <div className="flex-1 min-h-0 flex flex-col lg:grid gap-3
-        lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.5fr)_minmax(0,1.2fr)]">
         {/* Each column: overflow-hidden clips to the grid/flex cell height */}
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm
           min-h-[30rem] lg:min-h-0 overflow-hidden">

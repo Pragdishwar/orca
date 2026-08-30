@@ -34,15 +34,11 @@ function App() {
       ) : (
         <>
           {activeTab === 'platform' && <PlatformTab />}
-          {activeTab !== 'platform' && (
-            <div className="overflow-auto h-full">
-              {activeTab === 'alerts' && <AlertsTab />}
-              {activeTab === 'validation' && <ValidationTab />}
-              {activeTab === 'offline_compile' && <OfflineCompileTab />}
-              {activeTab === 'trust' && <TrustTab />}
-              {activeTab === 'profile' && <Profile />}
-            </div>
-          )}
+          {activeTab === 'alerts' && <AlertsTab />}
+          {activeTab === 'validation' && <ValidationTab />}
+          {activeTab === 'offline_compile' && <OfflineCompileTab />}
+          {activeTab === 'trust' && <TrustTab />}
+          {activeTab === 'profile' && <Profile />}
         </>
       )}
     </AppShell>
