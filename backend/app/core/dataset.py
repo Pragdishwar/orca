@@ -23,10 +23,18 @@ RECORD_YEARS = 3
 
 
 
+_record_cache = {}
+_record_cache_time = {}
+
 async def build_record(lat: float = None, lon: float = None) -> List[Dict[str, Any]]:
     import httpx
     if lat is None or lon is None:
         lat, lon = INLET["lat"], INLET["lon"]
+        
+    cache_key = f"{lat:.4f}_{lon:.4f}"
+    now_ts = datetime.now(timezone.utc).timestamp()
+    if cache_key in _record_cache and now_ts - _record_cache_time.get(cache_key, 0) < 3600:
+        return _record_cache[cache_key]
 
     now = datetime.now(timezone.utc)
     yesterday_date = (now - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -131,6 +139,8 @@ async def build_record(lat: float = None, lon: float = None) -> List[Dict[str, A
             "cyclone_flag": cyclone_flag,
         })
 
+    _record_cache[cache_key] = rows
+    _record_cache_time[cache_key] = now_ts
     return rows
 
 def wave_data(row: Dict[str, Any]) -> Dict[str, float]:
