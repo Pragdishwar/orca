@@ -120,10 +120,10 @@ async def _zone_layer() -> Dict[str, Any]:
 def _coverage_line(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:
     """Where mobile coverage ends - the reason offline compile exists at all."""
     import math
-    inlet = get_inlet(user_lat, user_lon)
     features = []
+    # Calculate from the fixed land point (INLET) instead of the user's dynamic location
     for km, label in ((15.0, "Approximate mobile coverage limit"),):
-        ring = circle_ring(inlet["lat"], inlet["lon"], km, points=64)
+        ring = circle_ring(INLET["lat"], INLET["lon"], km, points=64)
         features.append({
             "type": "Feature",
             "properties": {"kind": "coverage_line", "label": label, "radius_km": km,
