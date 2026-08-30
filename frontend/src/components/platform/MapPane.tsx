@@ -375,10 +375,25 @@ export default function MapPane() {
         if (src) src.setData(geojson);
         else map.addSource(id, { type: 'geojson', data: geojson });
       };
-      for (const id of ['coverage_line', 'geofences', 'grounds', 'hazard_corridor',
+      for (const id of ['coverage_line', 'grounds', 'hazard_corridor',
         'route', 'pfz', 'inlet']) {
         upsert(id, id === 'route' ? route : data[id]);
       }
+      
+      // HARDCODED OVERRIDE FOR GEOFENCES
+      // If this doesn't render, MapLibre vector rendering is fundamentally broken.
+      upsert('geofences', {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          properties: { colour: '#ff00ff', name: 'HARDCODED FRONTEND TEST' },
+          geometry: {
+            type: 'Polygon',
+            // Simple triangle over Muttukadu area
+            coordinates: [[[80.20, 12.80], [80.30, 12.80], [80.25, 12.90], [80.20, 12.80]]]
+          }
+        }]
+      });
 
       const add = (spec: maplibregl.LayerSpecification) => {
         if (!map.getLayer(spec.id)) map.addLayer(spec);
