@@ -260,7 +260,12 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!res.ok) throw new Error('API Error');
+    if (!res.ok) {
+      const bodyText = await res.text();
+      let parsed = null;
+      try { parsed = JSON.parse(bodyText); } catch {}
+      throw new ApiError(parsed?.message || parsed?.detail || res.statusText, res.status);
+    }
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
