@@ -318,7 +318,7 @@ export default function ConversationPane() {
             rows={1}
             aria-label="Ask ORCA"
             placeholder="Is it safe to go out tomorrow morning?"
-            className="min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-sm
+            className="min-h-[2.5rem] max-h-[6rem] flex-1 resize-none overflow-y-auto bg-transparent px-2 py-2 text-sm
               text-slate-800 outline-none"
           />
           <button

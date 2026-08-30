@@ -339,7 +339,8 @@ export default function MapPane() {
     }
     setReady(true);
     try {
-      const data = await api.mapLayers(active?.verdict, active?.index_value, context.user_lat, context.user_lon);
+      const activeBoat = useOrcaStore.getState().activeBoat;
+      const data = await api.mapLayers(active?.verdict, active?.index_value, context.user_lat, context.user_lon, activeBoat?.boat_id);
 
       // The route corridor is a real endpoint call, not a static layer. It is
       // cached against the chosen destination: a redraw triggered by some other

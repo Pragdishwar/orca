@@ -331,13 +331,14 @@ export const api = {
   releaseAdvisory: (id: string, officer_name: string) =>
     post<any>(`/api/advisory/${id}/release`, { officer_name }),
 
-  mapLayers: (verdict?: string, index?: number, lat?: number, lon?: number) => {
+  mapLayers: (verdict?: string, index?: number, lat?: number, lon?: number, boat_id?: string) => {
     let url = `/api/map/layers?`;
     const params = new URLSearchParams();
     if (verdict) params.set('verdict', verdict);
     if (index != null) params.set('index_value', index.toString());
     if (lat != null) params.set('user_lat', lat.toString());
     if (lon != null) params.set('user_lon', lon.toString());
+    if (boat_id != null) params.set('boat_id', boat_id);
     return get<Record<string, any>>(url + params.toString());
   },
 
