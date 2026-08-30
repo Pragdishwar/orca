@@ -225,16 +225,16 @@ export const useOrcaStore = create<OrcaState>((set, get) => ({
 
   initGpsWatcher: () => {
     if ('geolocation' in navigator) {
-      // Check if permission is already granted so we don't prompt on boot unless they ask
-      navigator.permissions?.query({ name: 'geolocation' }).then((status) => {
-        if (status.state === 'granted') {
-          navigator.geolocation.watchPosition(
-            (pos) => get().setLocation(pos.coords.latitude, pos.coords.longitude),
-            () => {},
-            { enableHighAccuracy: false, maximumAge: 10000 }
-          );
-        }
-      }).catch(() => {});
+      navigator.geolocation.getCurrentPosition(
+        (pos) => get().setLocation(pos.coords.latitude, pos.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000 }
+      );
+      navigator.geolocation.watchPosition(
+        (pos) => get().setLocation(pos.coords.latitude, pos.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000 }
+      );
     }
   },
 

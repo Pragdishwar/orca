@@ -39,15 +39,15 @@ async def get_layers(
     return {
         "inlet": inlet_feature(user_lat, user_lon),
         "hazard_corridor": _hazard_corridor(verdict, index_value, user_lat, user_lon),
-        "pfz": _pfz_layer(user_lat, user_lon),
-        "geofences": _zone_layer(),
+        "pfz": await _pfz_layer(user_lat, user_lon),
+        "geofences": await _zone_layer(),
         "grounds": {"type": "FeatureCollection", "features": ground_rings()},
         "coverage_line": _coverage_line(user_lat, user_lon),
         "centre": [
             get_inlet(user_lat, user_lon)["lon"],
             get_inlet(user_lat, user_lon)["lat"]
         ],
-        "provenance": "SYNTHETIC",
+        "provenance": "REALTIME",
     }
 
 
@@ -84,23 +84,37 @@ def _hazard_corridor(verdict: Optional[str], index_value: float, user_lat: float
     }]}
 
 
-def _pfz_layer(user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
+async def _pfz_layer(user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
+    pts = await pfz_points(user_lat, user_lon)
     return {"type": "FeatureCollection", "features": [{
         "type": "Feature",
         "properties": {"pfz_id": p["pfz_id"], "depth_m": p["depth_m"],
                        "confidence": p["confidence"], "provenance": p["provenance"]},
         "geometry": {"type": "Point", "coordinates": [p["lon"], p["lat"]]},
-    } for p in pfz_points(user_lat, user_lon)]}
+    } for p in pts]}
 
 
-def _zone_layer() -> Dict[str, Any]:
+async def _zone_layer() -> Dict[str, Any]:
+    from backend.app.db.supabase import supabase
+    if not supabase:
+        return {"type": "FeatureCollection", "features": []}
+    
+    # Run synchronously in async endpoint because supabase-py is sync, but we use async route
+    # Ideally we'd use an executor or an async client. For now, supabase-py is used.
+    try:
+        res = supabase.table("geofence_boundaries").select("*").execute()
+        zones = res.data
+    except Exception as e:
+        print(f"Supabase geofences error: {e}")
+        zones = []
+
     return {"type": "FeatureCollection", "features": [{
         "type": "Feature",
-        "properties": {"zone_id": z["zone_id"], "name": z["name"], "type": z["type"],
+        "properties": {"zone_id": z.get("zone_id"), "name": z.get("name"), "type": z.get("type"),
                        "buffer_km": z.get("buffer_km"), "provenance": z.get("provenance", "OCEAN_ANALYTICS_LIVE"),
-                       "colour": z.get("colour", ZONE_COLOURS.get(z["type"].upper(), "#64748b"))},
-        "geometry": z["geojson"],
-    } for z in ZONES]}
+                       "colour": z.get("colour", ZONE_COLOURS.get(str(z.get("type")).upper(), "#64748b"))},
+        "geometry": z.get("geojson") or z.get("geometry"),
+    } for z in zones]}
 
 
 def _coverage_line(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:

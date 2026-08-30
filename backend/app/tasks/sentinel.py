@@ -63,7 +63,7 @@ async def sentinel_hazard_poll() -> Dict[str, Any]:
 
             for day_offset in range(HORIZON_DAYS):
                 target = started + timedelta(days=day_offset)
-                advisory = build_advisory(hull, target)
+                advisory = await build_advisory(hull, target)
                 verdict = advisory["verdict"]
 
                 triggers = []

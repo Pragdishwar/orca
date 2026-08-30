@@ -62,7 +62,7 @@ def _index_for(row: Dict[str, Any]) -> float:
     )
 
 
-def build_advisory(
+async def build_advisory(
     hull_class: str,
     target: datetime,
     departure_hour: int = DEFAULT_DEPARTURE_HOUR,
@@ -80,9 +80,9 @@ def build_advisory(
     if deadline <= departure:
         deadline = departure + timedelta(hours=8)
 
-    rows = record_window(departure, deadline, lat, lon)
+    rows = await record_window(departure, deadline, lat, lon)
     if not rows:
-        rows = [row_at(departure, lat, lon)]
+        rows = [await row_at(departure, lat, lon)]
 
     hourly = []
     for row in rows:
@@ -239,12 +239,12 @@ def _numerals(p: Dict[str, Any]) -> List[float]:
     return sorted({round(n, 4) for n in nums})
 
 
-def compare_hulls(target: datetime, hull_classes: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+async def compare_hulls(target: datetime, hull_classes: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """Same conditions, every hull class - the FR-13 differentiation view."""
     classes = hull_classes or [r["hull_class"] for r in config_store.hull_thresholds()]
     out = []
     for hc in classes:
-        a = build_advisory(hc, target)
+        a = await build_advisory(hc, target)
         out.append({
             "hull_class": a["hull_class"],
             "hull_label": a["hull_label"],

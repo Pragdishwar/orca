@@ -335,7 +335,7 @@ workflow.set_entry_point("planner")
 app = workflow.compile()
 
 
-def run_query(
+async def run_query(
     user_query: str,
     session_id: str,
     context: Dict[str, Any],
@@ -349,7 +349,7 @@ def run_query(
     hull = parsed["slots"].get("hull_class") or "FRP_SMALL"
     target = datetime.fromisoformat(parsed["slots"]["date"]).replace(tzinfo=timezone.utc)
 
-    computed = build_advisory(
+    computed = await build_advisory(
         hull_class=hull, 
         target=target,
         lat=parsed["slots"].get("user_lat", INLET["lat"]) or INLET["lat"],
@@ -371,5 +371,5 @@ def run_query(
         "hinge_events": [],
     }
     result = app.invoke(state)
-    result["hull_comparison"] = compare_hulls(target)
+    result["hull_comparison"] = await compare_hulls(target)
     return result

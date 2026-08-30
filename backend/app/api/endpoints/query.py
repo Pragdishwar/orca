@@ -59,9 +59,9 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
 
     parsed = parse_utterance(request.query_text, context)
     target_date = parsed["slots"]["date"]
-    official = advisory_for_date(target_date)
+    official = await advisory_for_date(target_date)
 
-    state = run_query(
+    state = await run_query(
         user_query=request.query_text,
         session_id=str(session.session_id),
         context=context,
@@ -75,9 +75,8 @@ async def execute_query(request: QueryRequest, db: AsyncSession = Depends(get_db
 
     # The planner classifies intent; honour it. Without this every question -
     # including "where is the nearest fishing zone?" - came back as a crossing
-    # verdict, answering something the user did not ask.
     intent = state.get("llm_output", {}).get("intent", "crossing_safety")
-    intent_result = answer_for_intent(intent, state["slots"], computed["cruise_knots"])
+    intent_result = await answer_for_intent(intent, state["slots"], computed["cruise_knots"])
 
     # Persist the merged context so the next turn inherits it (FR-03).
     session.context = state["slots"]

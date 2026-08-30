@@ -18,4 +18,4 @@ async def get_validation(
     Recomputed from the analysis record on every call, so moving the threshold
     moves the numbers (FR-37). Nothing here is a stored constant.
     """
-    return validation_core.compute(threshold)
+    return await validation_core.compute(threshold)

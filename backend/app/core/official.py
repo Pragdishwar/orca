@@ -1,4 +1,4 @@
-"""Lookup for the official advisory strip (D-11, FR-19)."""
+import asyncio
 from functools import lru_cache
 from typing import Any, Dict
 
@@ -16,16 +16,21 @@ FALLBACK = {
 }
 
 
-@lru_cache(maxsize=1)
-def _by_date() -> Dict[str, Dict[str, Any]]:
-    return {row["date"]: row for row in official_advisories()}
+# We can just cache the dict in a global variable
+_cache = None
+
+async def _by_date() -> Dict[str, Dict[str, Any]]:
+    global _cache
+    if _cache is None:
+        _cache = {row["date"]: row for row in await official_advisories()}
+    return _cache
 
 
-def advisory_for_date(date_iso: str) -> Dict[str, Any]:
+async def advisory_for_date(date_iso: str) -> Dict[str, Any]:
     """The bulletin in force on a date, mapped onto the record like the advisory."""
     from datetime import datetime, timezone
 
-    table = _by_date()
+    table = await _by_date()
     if date_iso in table:
         return table[date_iso]
     try:
@@ -36,6 +41,6 @@ def advisory_for_date(date_iso: str) -> Dict[str, Any]:
     return table.get(mapped.date().isoformat(), FALLBACK)
 
 
-def latest() -> Dict[str, Any]:
-    rows = official_advisories()
+async def latest() -> Dict[str, Any]:
+    rows = await official_advisories()
     return rows[-1] if rows else FALLBACK

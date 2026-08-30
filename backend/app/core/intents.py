@@ -27,14 +27,15 @@ def resolve_ground(ground_id: str) -> Dict[str, Any]:
     return NAMED_GROUNDS[0]
 
 
-def nearest_pfz(ground_id: str, limit: int = 3, user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
+async def nearest_pfz(ground_id: str, limit: int = 3, user_lat: Optional[float] = None, user_lon: Optional[float] = None) -> Dict[str, Any]:
     g = resolve_ground(ground_id)
     lat = user_lat if user_lat is not None else g["centroid_lat"]
     lon = user_lon if user_lon is not None else g["centroid_lon"]
     origin_name = "your current location" if user_lat is not None else g["local_name"]
     
     ranked = []
-    for p in pfz_points(lat, lon):
+    points = await pfz_points(lat, lon)
+    for p in points:
         d = haversine_km(lat, lon, p["lat"], p["lon"])
         ranked.append({
             "pfz_id": p["pfz_id"],
@@ -160,7 +161,7 @@ def marine_conditions(slots: Dict[str, Any]) -> Dict[str, Any]:
         "method": "Open-Meteo live API."
     }
 
-def answer_for_intent(intent: str, slots: Dict[str, Any],
+async def answer_for_intent(intent: str, slots: Dict[str, Any],
                       cruise_knots: float) -> Optional[Dict[str, Any]]:
     """Returns None for crossing_safety, which the advisory engine handles."""
     ground = slots.get("ground_id") or DEFAULT_GROUND
@@ -169,7 +170,7 @@ def answer_for_intent(intent: str, slots: Dict[str, Any],
     if intent == "marine_conditions":
         return marine_conditions(slots)
     if intent == "nearest_pfz":
-        return nearest_pfz(ground, user_lat=user_lat, user_lon=user_lon)
+        return await nearest_pfz(ground, user_lat=user_lat, user_lon=user_lon)
     if intent == "geofence_check":
         return geofence_check(ground, user_lat=user_lat, user_lon=user_lon)
     if intent == "route_advisory":

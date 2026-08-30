@@ -205,13 +205,26 @@ export default function MapPane() {
     });
   }, [active]);
 
+  // Fly to user GPS once acquired on initial load
+  const [hasFramedGps, setHasFramedGps] = useState(false);
+  useEffect(() => {
+    if (mapRef.current && ready && context.user_lat && context.user_lon && !hasFramedGps) {
+      mapRef.current.flyTo({ center: [context.user_lon, context.user_lat], zoom: 10, duration: 1500 });
+      setHasFramedGps(true);
+    }
+  }, [context.user_lat, context.user_lon, ready, hasFramedGps]);
+
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
+    const initialCenter: [number, number] = context.user_lon && context.user_lat 
+      ? [context.user_lon, context.user_lat] 
+      : [78.9629, 20.5937]; // fallback if GPS not yet loaded
+
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: BASEMAP_STYLE,
-      center: [78.9629, 20.5937],
-      zoom: 4,
+      center: initialCenter,
+      zoom: context.user_lon && context.user_lat ? 10 : 4,
       // Expanded to include the whole India map
       maxBounds: [[68.0, 6.5], [97.5, 37.5]],
       minZoom: 3.5,

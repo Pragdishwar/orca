@@ -59,7 +59,7 @@ async def get_advisory(advisory_id: UUID, db: AsyncSession = Depends(get_db)) ->
 
 async def _detail(advisory: Advisory) -> Dict[str, Any]:
     payload = advisory.payload or {}
-    official = advisory_for_date(advisory.advisory_date or "")
+    official = await advisory_for_date(advisory.advisory_date or "")
     return {
         "advisory": _view(advisory),
         "payload": payload,

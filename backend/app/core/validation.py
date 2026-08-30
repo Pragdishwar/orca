@@ -50,10 +50,10 @@ def _true_risk(row: Dict[str, Any]) -> float:
             + 0.08 * swell + 0.14 * chop + 0.06 * storm)
 
 
-@lru_cache(maxsize=1)
-def daily_frame() -> List[Dict[str, Any]]:
+# Removed lru_cache since daily_frame is now async and build_record fetches live.
+async def daily_frame() -> List[Dict[str, Any]]:
     """One row per day: max index, max Hs, max true risk, incident yes/no."""
-    record = build_record()
+    record = await build_record()
     by_day: Dict[date, Dict[str, Any]] = {}
 
     for row in record:
@@ -120,10 +120,10 @@ def _contingency(days: List[Dict[str, Any]], flag_key: str, threshold: float) ->
     }
 
 
-def compute(threshold: Optional[float] = None) -> Dict[str, Any]:
+async def compute(threshold: Optional[float] = None) -> Dict[str, Any]:
     """Full validation payload at the given index operating point."""
     thr = REFERENCE_INDEX_UNSAFE if threshold is None else float(threshold)
-    days = daily_frame()
+    days = await daily_frame()
 
     orca = _contingency(days, "max_index", thr)
     baseline = _contingency(days, "max_hs", BASELINE_HS_M)

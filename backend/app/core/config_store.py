@@ -28,16 +28,25 @@ def reload_all() -> None:
 
 
 def hull_thresholds() -> List[Dict[str, Any]]:
+    from backend.app.db.supabase import supabase
+    if supabase:
+        try:
+            res = supabase.table("vessels").select("*").execute()
+            if res.data:
+                # Map standard DB column names to what ThresholdBand expects if necessary
+                return res.data
+        except Exception as e:
+            print(f"Supabase vessels error: {e}")
+    # Fallback to local JSON if no DB
     return _cached("hull_thresholds.json")["rows"]
 
 
 def hull_threshold(hull_class: str) -> Dict[str, Any]:
     rows = hull_thresholds()
     for row in rows:
-        if row["hull_class"] == hull_class:
+        if row.get("hull_class") == hull_class:
             return row
-    # Unknown hull falls back to the most conservative band on file.
-    return min(rows, key=lambda r: r["index_unsafe"])
+    return min(rows, key=lambda r: r.get("index_unsafe", 1.0))
 
 
 def personas() -> List[Dict[str, Any]]:
