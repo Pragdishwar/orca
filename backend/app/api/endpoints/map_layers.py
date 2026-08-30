@@ -6,7 +6,11 @@ second copy of the zones to drift out of sync.
 """
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.app.db.session import get_db
 
 from backend.app.core.dataset import INLET
 from backend.app.core.geo import circle_ring
