@@ -119,17 +119,27 @@ async def _zone_layer() -> Dict[str, Any]:
 
 def _coverage_line(user_lat: float = None, user_lon: float = None) -> Dict[str, Any]:
     """Where mobile coverage ends - the reason offline compile exists at all."""
-    import math
     features = []
-    # Calculate from the fixed land point (INLET) instead of the user's dynamic location
-    for km, label in ((15.0, "Approximate mobile coverage limit"),):
-        ring = circle_ring(INLET["lat"], INLET["lon"], km, points=64)
-        features.append({
-            "type": "Feature",
-            "properties": {"kind": "coverage_line", "label": label, "radius_km": km,
-                           "note": ("Beyond this line a live interface is unavailable. "
-                                    "Advisories must already be aboard."),
-                           "provenance": "SYNTHETIC"},
-            "geometry": {"type": "LineString", "coordinates": ring},
-        })
+    
+    # Calculate from multiple fixed land points instead of one particular place
+    # to show coverage runs along the entire coast.
+    COASTAL_POINTS = [
+        (8.37, 76.99),   # Vizhinjam
+        (8.636, 76.786), # Muthalapozhi (INLET)
+        (8.88, 76.58),   # Kollam
+        (9.49, 76.33),   # Alappuzha
+        (9.96, 76.24),   # Kochi
+    ]
+    
+    for lat, lon in COASTAL_POINTS:
+        for km, label in ((15.0, "Approximate mobile coverage limit"),):
+            ring = circle_ring(lat, lon, km, points=64)
+            features.append({
+                "type": "Feature",
+                "properties": {"kind": "coverage_line", "label": label, "radius_km": km,
+                               "note": ("Beyond this line a live interface is unavailable. "
+                                        "Advisories must already be aboard."),
+                               "provenance": "SYNTHETIC"},
+                "geometry": {"type": "LineString", "coordinates": ring},
+            })
     return {"type": "FeatureCollection", "features": features}
