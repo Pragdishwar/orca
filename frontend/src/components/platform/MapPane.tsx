@@ -389,10 +389,10 @@ export default function MapPane() {
       // Add the raster basemap FIRST so it renders BELOW all ORCA layers.
       // This was previously in BASEMAP_STYLE but MapLibre's style-defined layers
       // always render above programmatically-added layers, hiding our overlays.
-      // add({
-      //   id: 'osm', type: 'raster', source: 'osm',
-      //   paint: { 'raster-opacity': 0.65 },
-      // } as any);
+      add({
+        id: 'osm', type: 'raster', source: 'osm',
+        paint: { 'raster-opacity': 0.65 },
+      } as any);
 
       add({
         id: 'grounds-fill', type: 'fill', source: 'grounds',
