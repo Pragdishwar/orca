@@ -218,7 +218,7 @@ export default function ConversationPane() {
   };
 
   return (
-    <div className="flex h-full flex-col min-h-0 flex-1">
+    <div className="flex flex-col h-full">
       <div className="border-b border-slate-200 bg-slate-50 p-3 shrink-0">
         <div className="mb-2 flex items-center justify-between gap-2">
           <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
