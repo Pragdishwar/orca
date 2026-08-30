@@ -255,7 +255,7 @@ Ensure you strictly respond in JSON format with two keys:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "llama3-8b-8192",
+                        "model": "openai/gpt-oss-20b",
                         "messages": [{"role": "system", "content": prompt}],
                         "response_format": {"type": "json_object"}
                     },
