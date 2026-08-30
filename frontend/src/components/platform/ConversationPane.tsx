@@ -218,8 +218,8 @@ export default function ConversationPane() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-slate-200 bg-slate-50 p-3">
+    <div className="flex h-full flex-col min-h-0 flex-1">
+      <div className="border-b border-slate-200 bg-slate-50 p-3 shrink-0">
         <div className="mb-2 flex items-center justify-between gap-2">
           <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
             Retained context
@@ -253,7 +253,7 @@ export default function ConversationPane() {
         )}
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-scroll bg-slate-50 p-3">
+      <div className="flex-1 space-y-3 overflow-y-scroll bg-slate-50 p-3 min-h-0">
         {chatHistory.length === 0 && !isQuerying && (
           <div className="space-y-3">
             <p className="pt-4 text-center text-sm text-slate-500">
@@ -306,7 +306,7 @@ export default function ConversationPane() {
         <div ref={endRef} />
       </div>
 
-      <div className="border-t border-slate-200 bg-white p-3">
+      <div className="border-t border-slate-200 bg-white p-3 shrink-0">
         <div className="flex items-end gap-2 rounded-xl border border-slate-200
           bg-slate-100 p-1.5">
           <textarea
