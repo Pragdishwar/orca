@@ -380,20 +380,7 @@ export default function MapPane() {
         upsert(id, id === 'route' ? route : data[id]);
       }
       
-      // HARDCODED OVERRIDE FOR GEOFENCES
-      // If this doesn't render, MapLibre vector rendering is fundamentally broken.
-      upsert('geofences', {
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: { colour: '#ff00ff', name: 'HARDCODED FRONTEND TEST' },
-          geometry: {
-            type: 'Polygon',
-            // Simple triangle over Muttukadu area
-            coordinates: [[[80.20, 12.80], [80.30, 12.80], [80.25, 12.90], [80.20, 12.80]]]
-          }
-        }]
-      });
+      // (Hardcoded test removed)
 
       const add = (spec: maplibregl.LayerSpecification) => {
         if (!map.getLayer(spec.id)) map.addLayer(spec);
@@ -402,10 +389,10 @@ export default function MapPane() {
       // Add the raster basemap FIRST so it renders BELOW all ORCA layers.
       // This was previously in BASEMAP_STYLE but MapLibre's style-defined layers
       // always render above programmatically-added layers, hiding our overlays.
-      add({
-        id: 'osm', type: 'raster', source: 'osm',
-        paint: { 'raster-opacity': 0.65 },
-      } as any);
+      // add({
+      //   id: 'osm', type: 'raster', source: 'osm',
+      //   paint: { 'raster-opacity': 0.65 },
+      // } as any);
 
       add({
         id: 'grounds-fill', type: 'fill', source: 'grounds',
