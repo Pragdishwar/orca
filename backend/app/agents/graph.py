@@ -255,7 +255,7 @@ Ensure you strictly respond in JSON format with two keys:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "openai/gpt-oss-20b",
+                        "model": "llama3-8b-8192",
                         "messages": [{"role": "system", "content": prompt}],
                         "response_format": {"type": "json_object"}
                     },
@@ -273,9 +273,12 @@ Ensure you strictly respond in JSON format with two keys:
                     if content_str.endswith("```"):
                         content_str = content_str[:-3]
                     content_str = content_str.strip()
-                    content = json.loads(content_str)
-                    text = content.get("explanation_text", text)
-                    token = content.get("verdict_token", token)
+                    try:
+                        content = json.loads(content_str)
+                        text = content.get("explanation_text", text)
+                        token = content.get("verdict_token", token)
+                    except json.JSONDecodeError:
+                        pass  # keep template text on bad JSON
                 else:
                     print(f"Groq API returned status {resp.status_code}: {resp.text}")
         except Exception as e:
