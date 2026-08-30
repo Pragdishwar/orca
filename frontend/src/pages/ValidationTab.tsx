@@ -31,7 +31,7 @@ export default function ValidationTab() {
         <span className="flex items-start gap-2">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            <strong>Ground truth is synthetic.</strong> These numbers are genuinely
+            <strong>Powered by real-world Open-Meteo API.</strong> These numbers are genuinely
             recomputed from the record on every request, so the method is real — but they
             are not a field skill claim. Replace the record and the incident list with
             observed data before quoting any of this.
