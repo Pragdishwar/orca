@@ -127,7 +127,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const unreleased = alertSummary.pending_release ?? 0;
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-100 text-slate-900">
+    <div className="flex h-screen overflow-hidden flex-col bg-slate-100 text-slate-900">
       <header className="flex flex-wrap items-center justify-between gap-3 bg-slate-900
         px-4 py-3 text-white shadow-md">
         <div className="flex items-center gap-3">
