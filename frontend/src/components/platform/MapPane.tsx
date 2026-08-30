@@ -394,19 +394,19 @@ export default function MapPane() {
 
       add({
         id: 'grounds-fill', type: 'fill', source: 'grounds',
-        paint: { 'fill-color': '#0ea5e9', 'fill-opacity': 0.12 },
+        paint: { 'fill-color': '#0ea5e9', 'fill-opacity': 0.4 },
       });
       add({
         id: 'grounds-line', type: 'line', source: 'grounds',
-        paint: { 'line-color': '#0284c7', 'line-width': 1, 'line-dasharray': [2, 2] },
+        paint: { 'line-color': '#0284c7', 'line-width': 3, 'line-dasharray': [2, 2] },
       });
       add({
         id: 'geofences-fill', type: 'fill', source: 'geofences',
-        paint: { 'fill-color': ['get', 'colour'], 'fill-opacity': 0.35 },
+        paint: { 'fill-color': '#ff0000', 'fill-opacity': 0.5 },
       });
       add({
         id: 'geofences-line', type: 'line', source: 'geofences',
-        paint: { 'line-color': ['get', 'colour'], 'line-width': 3 },
+        paint: { 'line-color': '#ff0000', 'line-width': 4 },
       });
       add({
         id: 'hazard_corridor-fill', type: 'fill', source: 'hazard_corridor',
