@@ -123,7 +123,7 @@ def route_advisory(ground_id: str, cruise_knots: float) -> Dict[str, Any]:
         "status": "LIVE"}
 
 
-def marine_conditions(slots: Dict[str, Any]) -> Dict[str, Any]:
+async def marine_conditions(slots: Dict[str, Any]) -> Dict[str, Any]:
     from backend.app.core.dataset import row_at, INLET
     from datetime import datetime, timezone
     
@@ -140,7 +140,7 @@ def marine_conditions(slots: Dict[str, Any]) -> Dict[str, Any]:
     hour = slots.get("departure_hour", 6)
     target_dt = target.replace(hour=hour, minute=0, second=0, microsecond=0)
     
-    row = row_at(target_dt, lat, lon)
+    row = await row_at(target_dt, lat, lon)
     if not row:
         return {"kind": "marine_conditions", "answer": "I could not retrieve the weather forecast for that time.", "points": []}
     
@@ -169,7 +169,7 @@ async def answer_for_intent(intent: str, slots: Dict[str, Any],
     user_lat = slots.get("user_lat")
     user_lon = slots.get("user_lon")
     if intent == "marine_conditions":
-        return marine_conditions(slots)
+        return await marine_conditions(slots)
     if intent == "nearest_pfz":
         return await nearest_pfz(ground, user_lat=user_lat, user_lon=user_lon)
     if intent == "geofence_check":
