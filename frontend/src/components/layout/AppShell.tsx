@@ -224,8 +224,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
         </nav>
 
-        <main className="flex-1 overflow-auto p-4 pb-24 md:pb-4">
-          <div className="mx-auto w-full max-w-[1800px]">
+        <main className="flex-1 overflow-hidden p-4 pb-24 md:pb-4 flex flex-col">
+          <div className="mx-auto w-full max-w-[1800px] flex-1 min-h-0 flex flex-col">
             {children}
           </div>
         </main>
