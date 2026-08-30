@@ -57,7 +57,8 @@ async def build_record(lat: float = None, lon: float = None) -> List[Dict[str, A
             w_forecast = wf_res.json()
     except Exception as e:
         print(f"Error fetching from Open-Meteo: {e}")
-        return []
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail="Weather data provider (Open-Meteo) rate limit exceeded or unavailable.")
 
     m_hourly = m_data.get("hourly", {})
     
@@ -71,7 +72,9 @@ async def build_record(lat: float = None, lon: float = None) -> List[Dict[str, A
 
     times = m_hourly.get("time", [])
     if not times:
-        return []
+        from fastapi import HTTPException
+        reason = m_data.get("reason", "Unknown weather API error")
+        raise HTTPException(status_code=503, detail=f"Weather data provider unavailable: {reason}")
 
     rows = []
     

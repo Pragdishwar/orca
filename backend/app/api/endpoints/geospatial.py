@@ -34,7 +34,7 @@ async def list_grounds() -> Dict[str, Any]:
     """Named grounds only - the sole way a destination may be declared (FR-41)."""
     return {
         "grounds": [{"ground_id": g["ground_id"], "local_name": g["local_name"],
-                     "radius_km": g["radius_km"]} for g in NAMED_GROUNDS],
+                     "radius_km": g["radius_km"]} for g in named_grounds()],
         "privacy_note": ("Coordinates are held against the ground, never against a boat. "
                          "A boat profile stores a ground name and nothing more."),
     }
