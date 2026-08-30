@@ -81,41 +81,60 @@ BOATS: List[Dict[str, Any]] = [
 ]
 
 
+import time as _time
+_pfz_cache: Dict[str, Any] = {}
+_pfz_cache_ts: Dict[str, float] = {}
+_PFZ_CACHE_TTL = 1800  # 30 minutes — stays within Open-Meteo free tier
+
 async def pfz_points(lat: float = None, lon: float = None) -> List[Dict[str, Any]]:
     """D-06: PFZ advisory points dynamically computed using live sea surface temperature gradients."""
     import httpx
-    
+
     if lat is None or lon is None:
         inlet = get_inlet()
         lat, lon = inlet["lat"], inlet["lon"]
-        
+
+    cache_key = f"{lat:.3f}_{lon:.3f}"
+    now = _time.monotonic()
+    if cache_key in _pfz_cache and now - _pfz_cache_ts.get(cache_key, 0) < _PFZ_CACHE_TTL:
+        return _pfz_cache[cache_key]
+
     # Generate a 3x3 grid around the user, spaced by ~5km (0.05 degrees)
     lats = [round(lat + d, 4) for d in (-0.05, 0, 0.05)]
     lons = [round(lon + d, 4) for d in (-0.05, 0, 0.05)]
-    
+
     grid_lats = []
     grid_lons = []
     for x in lats:
         for y in lons:
             grid_lats.append(str(x))
             grid_lons.append(str(y))
-            
+
     lat_str = ",".join(grid_lats)
     lon_str = ",".join(grid_lons)
-    
+
     # We use ocean_current_velocity as a robust proxy for thermal fronts / upwelling in the marine API
     url = f"https://marine-api.open-meteo.com/v1/marine?latitude={lat_str}&longitude={lon_str}&hourly=ocean_current_velocity"
-    
+
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            response = await client.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10.0)
+            if response.status_code == 429:
+                print("Open-Meteo rate limit hit — returning cached PFZ if available")
+                return _pfz_cache.get(cache_key, [])
             data = response.json()
-            
+
+        # Open-Meteo returns a list for multiple coordinates, a dict for one
+        if isinstance(data, dict):
+            data = [data]
+
         pts = []
         avg_vel = 0.0
         valid_count = 0
-        
+
         for i, point_data in enumerate(data):
+            if not isinstance(point_data, dict):
+                continue
             velocities = point_data.get("hourly", {}).get("ocean_current_velocity", [])
             if not velocities or velocities[0] is None:
                 continue
@@ -128,36 +147,32 @@ async def pfz_points(lat: float = None, lon: float = None) -> List[Dict[str, Any
                 "lon": float(grid_lons[i]),
                 "velocity": vel
             })
-            
+
         if not pts:
+            _pfz_cache[cache_key] = []
+            _pfz_cache_ts[cache_key] = now
             return []
-            
+
         avg_vel /= valid_count
-        
+
         # Identify sharpest gradient (max absolute difference from average)
-        best_pt = None
-        max_grad = -1.0
-        for p in pts:
-            grad = abs(p["velocity"] - avg_vel)
-            if grad > max_grad:
-                max_grad = grad
-                best_pt = p
-                
-        if not best_pt:
-            return []
-            
-        return [{
+        best_pt = max(pts, key=lambda p: abs(p["velocity"] - avg_vel))
+
+        result = [{
             "pfz_id": "PFZ-LIVE-001",
             "lat": best_pt["lat"],
             "lon": best_pt["lon"],
             "depth_m": round(25 + (best_pt["velocity"] * 100), 1),
             "validity_hrs": 24,
-            "confidence": round(0.7 + min(max_grad, 0.25), 2),
+            "confidence": round(0.7 + min(abs(best_pt["velocity"] - avg_vel), 0.25), 2),
             "provenance": "LIVE_SST_GRADIENT"
         }]
+        _pfz_cache[cache_key] = result
+        _pfz_cache_ts[cache_key] = now
+        return result
     except Exception as e:
         print(f"Error fetching real PFZ from Open-Meteo: {e}")
-        return []
+        return _pfz_cache.get(cache_key, [])
 
 
 async def official_advisories() -> List[Dict[str, Any]]:
