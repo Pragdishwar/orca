@@ -241,10 +241,11 @@ Computed Conditions:
 Response Framing:
 {framing}
 
-Formulate a concise, clear answer addressing the user's question, using the computed conditions above.
+Formulate a conversational and natural-sounding answer addressing the user's question, using the computed conditions above.
+Speak as an expert coastal safety advisor. Do NOT just list the bullet points. Weave the verdict, turn-back time, and safety limit into a clear, empathetic explanation.
 CRITICAL: Do not include ANY numbers (including percentages or counts like 100%, 1, 2) in your response that are not explicitly provided in the Computed Conditions above. The safety guard will reject your response if it contains unauthorized numbers.
 Ensure you strictly respond in JSON format with two keys:
-1. "explanation_text": Your detailed but concise response. Do not repeat the prompt.
+1. "explanation_text": Your conversational response. Do not repeat the prompt.
 2. "verdict_token": The exact verdict token ("SAFE", "MARGINAL", or "DO_NOT_CROSS").
 """
                 resp = client.post(
@@ -254,10 +255,9 @@ Ensure you strictly respond in JSON format with two keys:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "openai/gpt-oss-20b",
+                        "model": "llama-3.1-70b-versatile",
                         "messages": [{"role": "system", "content": prompt}],
-                        "response_format": {"type": "json_object"},
-                        "reasoning_format": "hidden"
+                        "response_format": {"type": "json_object"}
                     },
                     timeout=15.0
                 )
