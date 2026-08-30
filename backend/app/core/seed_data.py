@@ -41,14 +41,6 @@ def _box(lat0: float, lon0: float, lat1: float, lon1: float) -> Dict[str, Any]:
 
 # D-05: geofence zones.
 ZONES: List[Dict[str, Any]] = [
-    {
-        "zone_id": "Z-TEST-MASSIVE",
-        "name": "Massive Test Zone",
-        "type": "exclusion",
-        "colour": "#ff00ff",
-        "geojson": _box(10.0, 78.0, 15.0, 85.0), # Covers all of Chennai and ocean
-        "provenance": "OCEAN_ANALYTICS_LIVE",
-    },
     {"zone_id": "Z-IMBL-01", "name": "India-Sri Lanka IMBL approach", "type": "IMBL",
      "buffer_km": 5.0, "provenance": "LIVE_DATABASE",
      "geojson": _box(7.60, 77.10, 7.95, 77.80)},

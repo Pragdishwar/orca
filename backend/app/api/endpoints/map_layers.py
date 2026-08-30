@@ -91,8 +91,8 @@ def _zone_layer() -> Dict[str, Any]:
     return {"type": "FeatureCollection", "features": [{
         "type": "Feature",
         "properties": {"zone_id": z["zone_id"], "name": z["name"], "type": z["type"],
-                       "buffer_km": z["buffer_km"], "provenance": z["provenance"],
-                       "colour": ZONE_COLOURS.get(z["type"], "#64748b")},
+                       "buffer_km": z.get("buffer_km"), "provenance": z.get("provenance", "OCEAN_ANALYTICS_LIVE"),
+                       "colour": z.get("colour", ZONE_COLOURS.get(z["type"].upper(), "#64748b"))},
         "geometry": z["geojson"],
     } for z in ZONES]}
 
