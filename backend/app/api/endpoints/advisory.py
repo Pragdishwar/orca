@@ -103,7 +103,7 @@ async def broadcast_advisory(
 
     try:
         target = datetime.fromisoformat(advisory.advisory_date).replace(tzinfo=timezone.utc)
-        comparison = compare_hulls(target)
+        comparison = await compare_hulls(target)
     except (TypeError, ValueError):
         comparison = []
 
