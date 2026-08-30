@@ -1,16 +1,14 @@
-fastapi
+﻿fastapi
 uvicorn[standard]
 sqlalchemy>=2.0
 pydantic>=2
 apscheduler
 langgraph
 
-# Async DB drivers. aiosqlite is the zero-infrastructure default; asyncpg is
-# used when DATABASE_URL points at Postgres.
 aiosqlite
 asyncpg
 
-# Tests
 pytest
 pytest-asyncio
 httpx
+supabase
